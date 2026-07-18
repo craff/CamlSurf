@@ -1,0 +1,76 @@
+(rule
+ (target surfaces_x11.ml)
+ (action (write-file %{target} "include Surfaces")))
+
+(rule
+ (target surfaces_wayland.ml)
+ (action (write-file %{target} "include Surfaces")))
+
+(rule
+ (target ellipsoid.ml)
+ (deps shaders/ellipsoid.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target fragment_light_implicit.ml)
+ (deps shaders/fragment_light_implicit.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target preambule.ml)
+ (deps shaders/preambule.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target fragment_text.ml)
+ (deps shaders/fragment_text.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target solve2.ml)
+ (deps shaders/solve2.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target vertex_implicit.ml)
+ (deps shaders/vertex_implicit.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(rule
+ (target vertex_text.ml)
+ (deps shaders/vertex_text.glsl)
+ (action
+  (with-stdout-to %{target}
+   (run glsl_to_ml %{deps}))))
+
+(library
+ (name formal)
+ (preprocess (per_module ((pps pacomb.ppx) Algebra Expression Gen)))
+ (modules algebra expression gen)
+ (libraries zarith mlmpfr pacomb))
+
+(executable
+ (name surfaces_x11)
+ (public_name surfaces_x11)
+ (modules surfaces_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve2 vertex_implicit  vertex_text  )
+ (flags (:standard -w -6))
+ (libraries gles3 gles3-x11 formal))
+
+(executable
+ (name surfaces_wayland)
+ (public_name surfaces_wayland)
+ (modules surfaces_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve2  vertex_implicit  vertex_text  )
+ (flags (:standard -w -6))
+ (libraries gles3 gles3-wayland formal))

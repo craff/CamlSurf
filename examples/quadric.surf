@@ -1,0 +1,19 @@
+mindivs = 0;      # No a priori subdivision of the ray
+precision = 1e-1; # Precision of the cubic predictor (1e-1 is enough for these quadrics)
+
+
+# A transparent sphere
+{
+  specular = 0.33;
+  color = (0.5, 0.5, 0.7, 0.4);
+  surface sphere : (x^2+y^2+z^2 - 2);
+}
+
+# An hyperboloid
+{
+  let q5 = x^2+y^2-z^2-1.9;
+  color = (0.7, 0.7, 0.4);
+  surface hyperboloid : q5 bound x^2+y^2+z^2-9;
+}
+
+sleep 10;
