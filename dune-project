@@ -1,26 +1,24 @@
 (lang dune 3.23)
 
-(name Surf)
+(name CamlSurf)
 
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github craff/CamlSurf))
 
-(authors "Author Name <author@example.com>")
+(authors "Christophe Raffalli <christophe@raffalli.eu>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers  "Christophe Raffalli <christophe@raffalli.eu>")
 
-(license LICENSE)
+(license MIT)
 
-(documentation https://url/to/documentation)
+(documentation https://raffalli.eu/CamlSurf)
 
 (package
- (name Surf)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (name CamlSurf)
+ (synopsis "A program to display and animate implicit surfaces and curves")
+ (description "A program to display and animate implicit surfaces and curves")
  (depends ocaml)
  (tags
-  ("add topics" "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
+  ("surface" "curve" "geometry" "OpenGL")))
