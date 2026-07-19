@@ -1,4 +1,5 @@
 CamlSurf
 ========
 
-![Cone & cubic intersection](images/cone3.png)
+<img src="Images/cone3.png" alt="Cone & cubic intersection" width="600">
+
