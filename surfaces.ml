@@ -28,8 +28,8 @@ let _ = viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight
 
 (** the modelView matrix of the cube defining the position of the cube, from
     the current time *)
-let modelView = ref (translate 0. 0. 5.)
-
+let modelView = ref idt
+let translateView = ref (translate 0. 0. 5.)
 let center = [|0.;0.;0.|]
 let lightPos = [|1.0;3.0;-3.0|]
 let eyePos = [|0.;0.;-3.0|]
@@ -223,7 +223,7 @@ let dessine_text () =
     end
 
 let dessine_implicit t =
-  let m = !modelView in
+  let m = mul !translateView !modelView in
   let im = inverse m in
   let n = normalMatrix m in
   let p = projection () in
@@ -261,8 +261,12 @@ let speedX = ref 0.0
 let speedY = ref 0.0
 let speedZ = ref 0.0
 let center = ref 5.0
-let f m =
-  mul (translate 0. 0. (!center)) (mul m (translate 0. 0. (-. !center)))
+let translateX a =  translateView := mul (translate a 0.0 0.0) !translateView
+let translateY a =  translateView := mul (translate 0.0 a 0.0) !translateView
+let translateZ a =  translateView := mul (translate 0.0 0.0 a) !translateView
+let rotateX a =  modelView := mul (rotateX a) !modelView
+let rotateY a =  modelView := mul (rotateY a) !modelView
+let rotateZ a =  modelView := mul (rotateZ a) !modelView
 
 
 (** the main drawing function, not mush to say, half of it
@@ -271,16 +275,9 @@ let draw () =
   let t = Unix.gettimeofday () in
   let delta = t -. !lasttime in
   lasttime := t;
-  if !speedY <> 0.0 then
-    modelView := mul (f (rotateY (!speedY *. delta))) !modelView;
-  if !speedX <> 0.0 then
-    modelView := mul (f (rotateX (!speedX *. delta))) !modelView;
-  if !speedZ <> 0.0 then
-    begin
-      let dz = !speedZ *. delta in
-      modelView := mul (translate 0. 0. dz) !modelView;
-      center := !center +. dz
-    end;
+  if !speedY <> 0.0 then rotateY (!speedY *. delta);
+  if !speedX <> 0.0 then rotateX (!speedX *. delta);
+  if !speedZ <> 0.0 then translateZ (!speedZ *. delta);
   clear [ gl_color_buffer ];
   viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight;
   if !surfaces <> [] then dessine_implicit (t -. firsttime);
@@ -377,7 +374,10 @@ let _ = set_reshape_callback ctxt (fun ~width ~height ->
 let commands =
   { add; add_curve; remove
   ; set_near = (fun x -> near := x)
-  ; set_far = (fun x -> far := x) }
+  ; set_far = (fun x -> far := x)
+  ; translateX; translateY; translateZ
+  ; rotateX; rotateY; rotateZ
+  }
 
 let _d = Domain.spawn (fun () -> run commands; Egl.exit_loop ctxt)
 

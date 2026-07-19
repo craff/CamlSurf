@@ -304,7 +304,14 @@ type cmds =
   ; add_curve : env -> string -> string -> E.elem -> unit
   ; remove : string -> string option -> unit
   ; set_near : float -> unit
-  ; set_far : float -> unit }
+  ; set_far : float -> unit
+  ; translateX : float -> unit
+  ; translateY : float -> unit
+  ; translateZ : float -> unit
+  ; rotateX : float -> unit
+  ; rotateY : float -> unit
+  ; rotateZ : float -> unit
+  }
 
 let continue_pause = ref false
 
@@ -359,6 +366,18 @@ let run (commands:cmds) =
         (fun () -> commands.set_near x)
     ; "far" "=" (x::FLOAT) =>
         (fun () -> commands.set_far x)
+    ; "translateX" (x::FLOAT) =>
+        (fun () -> commands.translateX x)
+    ; "translateY" (x::FLOAT) =>
+        (fun () -> commands.translateY x)
+    ; "translateZ" (x::FLOAT) =>
+        (fun () -> commands.translateZ x)
+    ; "rotateX" (x::FLOAT) =>
+        (fun () -> commands.rotateX x)
+    ; "rotateY" (x::FLOAT) =>
+        (fun () -> commands.rotateY x)
+    ; "rotateZ" (x::FLOAT) =>
+        (fun () -> commands.rotateZ x)
 
   and cmds = () => ()
     ; cmds (f :: Pacomb.Grammar.test_after semi cmd => f ()) ';' => ()
