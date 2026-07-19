@@ -334,8 +334,6 @@ let run (commands:cmds) =
           ( '(' (l :: ~*[','] E.ident) ')' => l))
           "=" (e::E.parse) =>
       (fun () ->
-        Printf.printf "%f %f %f %f\n%!"
-          !env.color.(0) !env.color.(1) !env.color.(2) !env.color.(3);
           E.fun_table :=
             Expression.StringMap.add
               id { variables; value = e; fname = id } !E.fun_table)
