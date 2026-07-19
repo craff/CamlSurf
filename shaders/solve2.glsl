@@ -2,6 +2,10 @@ vec3 dicho(int si, vec3 e,vec3 dir,
            float ua,float fa,
 	   float ub,float fb,
 	   out float ur) {
+     if (fa == 0) {
+       ur = ua;
+       return e + ua * dir;
+     }
      while (true) {
      	   float umid = 0.5 * (ua + ub);
 	   float un = umid;
@@ -116,12 +120,14 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	int sq = 0;
 	us[sq] = ua; fs[sq++] = fa;
 	float error = 0.0;
+	float mab = min(abs(fa),abs(fb));
 	if (ua < u1 && u1 < ub) {
 	   x = e + u1 * dir;
 	   float fx = f(si,x);
 	   us[sq] = u1; fs[sq++] = fx;
 	   float X = u1 - ua;
-	   error = abs(fx - (fa + (A + (B + C*X)*X)*X));
+	   float f3x = fa + (A + (B + C*X)*X)*X;
+	   error = abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x)));
 	   if (mid == 1) { xc = x; fc = fx; }
 	}
 	if (ua < u2 && u2 < ub) {
@@ -129,7 +135,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   float fx = f(si,x);
 	   us[sq] = u2; fs[sq++] = fx;
 	   float X = u2 - ua;
-	   error = max(error, abs(fx - (fa + (A + (B + C*X)*X)*X)));
+	   float f3x = fa + (A + (B + C*X)*X)*X;
+	   error = max(error, abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x))));
 	   if (mid == 2) { xc = x; fc = fx; }
 	}
 	if (ua < u3 && u3 < ub) {
@@ -137,10 +144,11 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   float fx = f(si,x);
 	   us[sq] = u3; fs[sq++] = fx;
 	   float X = u3 - ua;
-	   error = max(error, abs(fx - (fa + (A + (B + C*X)*X)*X)));
+	   float f3x = fa + (A + (B + C*X)*X)*X;
+	   error = max(error, abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x))));
 	   if (mid == 3) { xc = x; fc = fx; }
 	}
-	if (error > min(abs(fa),abs(fb))*surf.prec && sp <= SSIZE - 2 &&
+	if (!(error <= surf.prec) && sp <= SSIZE - 2 &&
 	     uc != ua && uc != ub) {
            ustack[sp] = ub;
 	   fstack[sp] = fb;
@@ -158,12 +166,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	for (int j = 0; j < sq-1; j++) {
 	   if (fs[j] * fs[j+1] <= 0) {
 	      float ur;
-	      if (fs[j+1] == 0) {
-	         x = e + fs[j+1] * dir;
-		 ur = us[j+1];
-	      } else {
-  	         x = dicho(si,e,dir,us[j],fs[j],us[j+1],fs[j+1],ur);
-	      }
+	      x = dicho(si,e,dir,us[j],fs[j],us[j+1],fs[j+1],ur);
 	      if (bf(si,x) > 0.0) continue;
 	      if (ur <= ubest) {
 	         while (ssr < sr && ures[ssr] < ur) ssr++;
