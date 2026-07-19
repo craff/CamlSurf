@@ -1,0 +1,38 @@
+
+rotateY 0.78;
+far = 15;
+let c(x,y,z) = x^2-y^2+z^2;
+
+{
+  color = (0.3, 0.3, 0.9, 0.3);
+  back_color = (0.3, 0.3, 0.9, 0.3);
+  surface c : c(x,y,z) bound (y-5)*(y+5);
+}
+
+let pi = acos(-1);
+let alpha = time/pi/2;
+let a = tan(alpha);
+let b = 0.5;
+let p(x,y,z) = y - a*x - b;
+
+surface p : p(x,y,z) bound c(x,y,z);
+
+{
+  line_color = (1.0, 1.0, 1.0, 1.0);
+  curve conique : c(x,y,z) on p;
+  curve conique : p(x,y,z) on c;
+}
+
+let beta1 = alpha/2-pi/8;
+let beta2 = -alpha/2+3*pi/8;
+let z1 = b / (1+a) * (1 + tan(beta1));
+let r1 = z1^2 / 2;
+let Fx1 =  (z1 - b)/(a + 1/a);
+let Fz1 = a * Fx1 + b;
+let z2 = b / (1-a) * (1 + tan(beta2));
+let r2 = z2^2 / 2;
+let Fx2 =  (z2 - b)/(a + 1/a);
+let Fz2 = a * Fx2 + b;
+
+surface sphere1 : - (y-z1)^2 - x^2 - z^2 + r1;
+surface sphere2 : - (y-z2)^2 - x^2 - z^2 + r2;

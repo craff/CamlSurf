@@ -1,0 +1,12 @@
+let mu = max(min(1 + 1.2*cos(time/7),3),1);
+let w = 1;
+let lambda = (3*mu-1)/(3 - mu);
+let p = 1 - z - sqrt(2)*x;
+let q = 1 - z + sqrt(2)*x;
+let r = 1 + z - sqrt(2)*y;
+let s = 1 + z + sqrt(2)*y;
+let k4 = (x^2 + y^2 + z^2 - mu * w^2)^2 - lambda*p*q*r*s;
+
+precision = 1e-2;
+mindivs = 0;
+surface k4 : k4 bound x^2+y^2+z^2 - 6;

@@ -1,0 +1,50 @@
+let cone = x^2 + y^2 - z^2;
+surface cone : cone;
+
+let p0 = - z - 1;
+
+line_color = (1.0, 0.0, 0.0);
+curve p0 : p0 on cone;
+
+sleep 5;
+
+let a = 0.27;
+let b = 0.002;
+let c = 1e-4;
+
+let p1 = p0 + a * (x+0.8);
+let p2 = p0 - a * (x+0.8);
+let p3 = x - 2*z - 1.5;
+
+line_color = (0.0, 0.7, 0.0);
+curve cp1 : p1 on cone;
+curve cp2 : p2 on cone;
+curve cp3 : p3 on cone;
+
+sleep 5;
+
+remove p0 on cone;
+
+sleep 10;
+
+let q = p1*p2 + b;
+
+line_color = (0.0, 0.0, 1.0);
+curve cq : q on cone;
+
+sleep 5;
+
+remove cp1 on cone;
+remove cp2 on cone;
+
+sleep 5;
+
+let cubic = q*p3 - c;
+
+line_color = (0.0, 0.0, 0.0);
+curve cc : cubic on cone;
+
+sleep 5;
+
+remove cp3 on cone;
+remove cq on cone;

@@ -1,0 +1,8 @@
+let c = x^2 + y^2 - z^2 - 1;
+
+{
+  surface c : c;
+  curve cx : sin(20*x/3.1415927) on c;
+  curve cy : sin(20*y/3.1415927) on c;
+  curve cz : sin(20*z/3.1415927) on c;
+}
