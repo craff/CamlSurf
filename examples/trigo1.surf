@@ -1,0 +1,4 @@
+let f(x,y,z)=sin(x*y)+exp(x*z/2)-cos(y^2+z^2);
+precision = 1e-2;
+surface f : f(x,y,z);
+far = 30;
