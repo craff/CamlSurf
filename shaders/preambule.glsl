@@ -39,6 +39,7 @@ struct surface {
   int mindivs;
   float prec;
   vec4 color;
+  vec4 back_color;
   float specular;
   float shininess;
 };

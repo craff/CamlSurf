@@ -7,13 +7,6 @@
  (action (write-file %{target} "include Surfaces")))
 
 (rule
- (target ellipsoid.ml)
- (deps shaders/ellipsoid.glsl)
- (action
-  (with-stdout-to %{target}
-   (run glsl_to_ml %{deps}))))
-
-(rule
  (target fragment_light_implicit.ml)
  (deps shaders/fragment_light_implicit.glsl)
  (action

@@ -23,15 +23,18 @@ void main()
     lightDir = normalize(lightPos - m_position.xyz);
 
     /* The ambient term will always be present */
-    vec4 line_color;
+    vec4 mcolor, col, line_color;
     float color_factor = cf(surf.id,p,line_color);
-    vec4 mcolor = surf.color;
-    if (color_factor < 3.0) {
-       mcolor = (1.0 - color_factor/3.0) * line_color
-       	       + (color_factor/3.0) * mcolor;
+    if (dot(n, m_position.xyz - eyePos) > 0) {
+      mcolor = surf.color;
+    } else {
+      mcolor = surf.back_color;
     }
-    vec4 col = lightAmbient * mcolor;
-
+    if (color_factor < 3.0) {
+      mcolor = (1.0 - color_factor/3.0) * line_color
+      	       + (color_factor/3.0) * mcolor;
+    }
+    col = lightAmbient * mcolor;
     NdotL = dot(n,lightDir);
     if (NdotL > 0.) {
       col += lightDiffuse * mcolor * NdotL;
@@ -41,6 +44,10 @@ void main()
         col += surf.specular * pow(NdotHV, surf.shininess);
       }
     } else {
+      if (color_factor < 3.0) {
+        mcolor = (1.0 - color_factor/3.0) * line_color
+       	       + (color_factor/3.0) * mcolor;
+      }
       col -= lightDiffuse * mcolor * NdotL;
       if (i == 0) {
         halfV = normalize(lightPos - 2.0 * m_position.xyz);

@@ -177,7 +177,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	            ures[ssr] = ur;
 		    res[ssr] = x;
   	            surfs[ssr++] = si;
-		    if (surf.color.a >= 1.0) {
+		    if ((surf.color.a >= 1.0 && dot(df(si,x),dir) > 0) ||
+		        (surf.back_color.a >= 1.0 && dot(df(si,x),dir) < 0)) {
 		       ubest = ur;
 		       sr = ssr;
 		       brk = true;
