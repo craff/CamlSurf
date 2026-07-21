@@ -34,6 +34,8 @@ end
 
 module StringMap = Map.Make(String)
 
+type lang = Human | Glsl | C
+
 module type Expression  =
 sig
   (* include Field *)
@@ -196,13 +198,13 @@ struct
 	let r = eval_power exp ((puis - 1) / 2) in
  	R.( ** ) exp (R.( ** ) r r)
 
-      (********** output input functions ***********)
+  (********** output input functions ***********)
 
-      (* la fonction d'affichage, utilisant les priorités usuelles pour les opérateurs binaires *)
+  (* la fonction d'affichage, utilisant les priorités usuelles pour les opérateurs binaires *)
 
   let is_var e = match e with Var _ -> true | _ -> false
 
-  let write formatter  expr =
+  let write ?(lang=Human) formatter expr =
 
     let print_string s =
       pp_print_string formatter s
@@ -213,7 +215,7 @@ struct
       pp_print_space formatter ()
     in
 
-     (* dans cette fonctions auxilliaire, le paramètre "l" représente le niveau de priorité courant *)
+    (* dans cette fonctions auxilliaire, le paramètre "l" représente le niveau de priorité courant *)
 
     let rec fn l e = match e with
 	Var name -> print_string name
@@ -221,8 +223,19 @@ struct
       | Add _ | Sub _ as e -> pp l 1 (fns 1) e
       | Mul _ | Div _ as e -> pp l 2 (fnp 2) e
       | Pow (e,n) ->
-	 print_string "ipow("; pp l 3 (fn 3) e; print_string ",";
-         pp_print_int formatter n; print_string ")"
+         begin
+           match lang with
+           | C ->
+	      print_string "powf("; pp l 3 (fn 3) e; print_string ",";
+              pp_print_int formatter n; print_string ")"
+           | Glsl ->
+	      print_string "powf("; pp l 3 (fn 3) e; print_string ",";
+              pp_print_int formatter n; print_string ")"
+           | Human ->
+	      pp l 3 (fn 0) e; print_string "^";
+              pp_print_int formatter n;
+
+         end
       | Tra (trindex,e) ->
 	 print_string !trans_array.(trindex).name;
 	 print_string "(";
@@ -266,13 +279,119 @@ struct
   let read_bin ch = input_value ch
   let print = write std_formatter
 
-  let write_to_string x =
+  let write_to_string ?(lang=Human) x =
     let b = Buffer.create 80 in
     let formatter =  formatter_of_buffer b in
-    write formatter x;
+    write ~lang formatter x;
     pp_print_flush formatter ();
     Buffer.contents b
 
+  let common es =
+    let tbl = Hashtbl.create 101 in
+    let rec fn e =
+      match e with
+      | Var _ -> ()
+      | Cst _ -> ()
+      | Pow(e,0) -> ()
+      | Pow(e,1) -> fn e
+      | Pow(e,n) when n < 1 ->
+         fn (Div(Cst(R.one), Pow(e,-n)))
+      | Pow(e, n) when n mod 2 = 0 ->
+         let f = Pow(e,n/2) in
+         fn (Mul(f, f))
+      | Pow(e, n) ->
+         let f = Pow(e,n/2) in
+         fn (Mul(Mul(f, f), e))
+      | _ ->
+         let count, new_ =
+           try
+             fst (Hashtbl.find tbl e), false
+           with Not_found ->
+                 let r = ref 0 in
+                 Hashtbl.add tbl e (r, ref None);
+                 r, true
+         in
+         incr count;
+         if new_ then
+           match e with
+           | Add(e1,e2) | Sub(e1,e2) | Mul(e1,e2) | Div(e1,e2)
+             | Tra2(_,e1,e2) ->
+              fn e1; fn e2
+           | Tra(_,e) -> fn e
+           | _ -> assert false
+    in
+    List.iter fn es;
+    Hashtbl.filter_map_inplace
+      (fun _ c -> if !(fst c) <= 1 then None else Some c)
+      tbl;
+    tbl
+
+  let defs ?(base="def_") es =
+    let tbl = common (List.map snd es) in
+    let i = ref 0 in
+    let res = ref [] in
+    let rec fn ?name e =
+      try
+        let (_, r) = Hashtbl.find tbl e in
+        match !r with
+        | None ->
+           let name =
+             match name with
+             | Some n -> n
+             | None -> base ^ string_of_int !i
+           in
+           incr i;
+           let c = (name, gn true e) in
+           r:= Some c;
+           res := c :: !res;
+           c
+        | Some ((name', _) as c) ->
+           match name with
+           | Some name when name' <> name ->
+              let c = (name, Var name') in
+              res := c :: !res;
+              c
+           | _ -> c
+      with Not_found ->
+        match name with
+        | None -> assert false
+        | Some n ->
+           let c = (n, gn true e) in
+           res := c :: !res;
+           c
+
+    and gn top e =
+      if not top && Hashtbl.mem tbl e then
+        let name = fst (fn e) in
+        Var name
+      else
+        let gn = gn false in
+        match e with
+        | Var _ | Cst _ -> e
+        | Add(e1,e2) -> Add(gn e1, gn e2)
+        | Sub(e1,e2) -> Sub(gn e1, gn e2)
+        | Mul(e1,e2) -> Mul(gn e1, gn e2)
+        | Div(e1,e2) -> Div(gn e1, gn e2)
+        | Tra(i, e1) -> Tra(i, gn e1)
+        | Tra2(i, e1, e2) -> Tra2(i, gn e1, gn e2)
+        | Pow(e, 0) -> Cst R.one
+        | Pow(e1, 1) -> gn e1
+        | Pow(e, n) when n < 0 -> gn (Div(Cst R.one, Pow(e,-n)))
+        | Pow(e, n) when n mod 2 = 0 ->
+           let f = Pow(e,n/2) in
+           gn (Mul(f, f))
+        | Pow(e, n) ->
+           let f = Pow(e,n/2) in
+           gn (Mul(Mul(f, f), e))
+    in
+    List.iter (fun (name, e) -> ignore (fn ~name e)) es;
+    List.rev !res
+
+  let write_defs ?(lang=Human) fmt es =
+    let defs = defs es in
+    List.iter (fun (name, e) ->
+        Format.fprintf fmt "float %s = %a;\n%!" name
+          (write ~lang) e) defs
 
   (******** Simplification procedure *******)
 

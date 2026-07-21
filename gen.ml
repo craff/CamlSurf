@@ -58,7 +58,9 @@ let check_simplify e =
   e
 
 let glsl name nature ?(bound=Cst (-1.0)) e =
+  let write_defs = E.write_defs ~lang:Glsl in
   let e = check_simplify e in
+  (*let _ = E.write_defs Format.std_formatter [("x", e)] in*)
   let bound = check_simplify bound in
   let fname =
     match nature with
@@ -100,8 +102,9 @@ let glsl name nature ?(bound=Cst (-1.0)) e =
             float x = p.x;\n\
             float y = p.y;\n\
             float z = p.z;\n\
-            return %a;\n\
-          }\n" fname fname colors fname write bound
+            %a
+            return res;\n\
+          }\n" fname fname colors fname write_defs [("res",  bound)]
   | Curve _ -> ""
   in
   Format.asprintf
@@ -110,19 +113,19 @@ let glsl name nature ?(bound=Cst (-1.0)) e =
        float x = p.x;\n\
        float y = p.y;\n\
        float z = p.z;\n\
-       return %a;\n\
+       %a
+       return res;\n\
      }\n\
      vec3 d%s(vec3 p)\n\
      {\n\
        float x = p.x;\n\
        float y = p.y;\n\
        float z = p.z;\n\
-       float dx = %a;\n\
-       float dy = %a;\n\
-       float dz = %a;\n\
+       %a
        return vec3(dx,dy,dz);\n\
      }\n%s"
-    fname write e fname write dxe write dye write dze color
+    fname write_defs [("res", e)] fname
+          write_defs [("dx", dxe);("dy", dye);("dz", dze)] color
 
 let dispatcher surfaces =
   let res = Buffer.create 1024 in
