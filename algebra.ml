@@ -27,6 +27,8 @@
 open Format (* ocaml module implements a pretty-printinting facilitity *)
 open Pacomb
 
+type lang = Human | Glsl | C
+
 module type Set =
 sig
   type elem
@@ -42,7 +44,7 @@ sig
 
   val print : elem -> unit
       (* printing (using the Format library) *)
-  val write : formatter -> elem -> unit
+  val write : ?lang:lang -> formatter -> elem -> unit
       (* writing in file (using the Format library) *)
   val parse : elem Grammar.t
   val write_bin : out_channel -> elem -> unit
@@ -176,7 +178,7 @@ module Ring_Z =
     let ( == ) = ( = )
     let opp x = - x
     let print = print_int
-    let write ch = pp_print_int ch
+    let write ?(lang=Human) ch = pp_print_int ch
     let%parser parse = (n::INT)  => n
     let write_bin = output_value
     let read_bin = input_value
@@ -208,7 +210,7 @@ module Ring_MZ =
     let ( == ) = equal
     let opp = ( ~- )
     let print = print
-    let write = output
+    let write ?(lang=Human) = output
     let%parser parse = (str::RE"-?[0-9]+") => of_string str
     let write_bin = output_value
     let read_bin = input_value
@@ -240,7 +242,13 @@ module Field_R =
     let ( == ) = ( = )
     let opp x = -. x
     let print x = printf "%.19e" x
-    let write ch = fprintf ch "%.19e"
+    let write ?(lang=Human) =
+      let format:_ format4 = match lang with
+        | Human -> "%f"
+        | C -> "%.19e"
+        | Glsl -> "%.10e"
+      in
+      (fun ch x -> fprintf ch format x)
     let%parser parse = (x::FLOAT) => x
     let write_bin = output_value
     let read_bin = input_value
@@ -285,7 +293,7 @@ module Field_MPFR = functor (P : Prec) ->
     let inv x = one // x
     let ( == ) x y = cmp x y = 0
     let opp x = zero -- x
-    let write ch x =
+    let write ?(lang=Human) ch x = (* FIXME: use lang, but how ? *)
       let s, exp = get_str ~base:10 ~size:19 x in
       fprintf ch "%sE%s" s exp
     let print = write std_formatter
@@ -325,7 +333,7 @@ module Field_Q =
     let opp = ( ~- )
     let normalize x = x
     let print n = print_string (to_string n)
-    let write ch n = pp_print_string ch (to_string n)
+    let write ?(lang=Human) ch n = pp_print_string ch (to_string n)
     let%parser parse =
         (n::Ring_MZ.parse) => Q.of_bigint n
       ; (n::Ring_MZ.parse) '/' (d::Ring_MZ.parse)
@@ -373,15 +381,17 @@ module Field_CP = functor (T : Atype) ->
       (R.(//) (R.(++) (R.( ** ) x x') (R.( ** ) y y')) d,
        R.(//) (R.(--) (R.( ** ) y x') (R.( ** ) x y')) d)
     let (==) (x,y) (x',y') = R.(==) x x' && R.(==) y y'
-    let write formatter (x,y) =
-      pp_open_box formatter 2;  (* using  Format module *)
-      R.write formatter x;
-      pp_print_space formatter ();
-      pp_print_string formatter "+";
-      pp_print_space formatter ();
-      pp_print_string formatter "i";
-      R.write formatter y;
-      pp_close_box formatter ()
+    let write ?(lang=Human) =
+      let write = R.write ~lang in
+      (fun formatter (x,y) ->
+        pp_open_box formatter 2;  (* using  Format module *)
+        write formatter x;
+        pp_print_space formatter ();
+        pp_print_string formatter "+";
+        pp_print_space formatter ();
+        pp_print_string formatter "i";
+        write formatter y;
+        pp_close_box formatter ())
     let print = write std_formatter
     let write_bin ch (x,y) =
       R.write_bin ch x; R.write_bin ch y
@@ -436,7 +446,9 @@ module Quotient =
     let (==) a b = R.(==) (R.(mod) (R.(--) a b) Elt.elt) R.zero
     let normalize x = R.(mod) (R.normalize x) Elt.elt
     let print x = R.print (normalize x)
-    let write ch x = R.write ch (normalize x)
+    let write ?(lang=Human) =
+      let write = R.write ~lang in
+      fun ch x -> write ch (normalize x)
     let write_bin ch x = R.write_bin ch (normalize x)
   end
 

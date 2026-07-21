@@ -34,8 +34,6 @@ end
 
 module StringMap = Map.Make(String)
 
-type lang = Human | Glsl | C
-
 module type Expression  =
 sig
   (* include Field *)
