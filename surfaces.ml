@@ -142,7 +142,7 @@ let mk_prog surfaces =
                of_string gl_fragment_shader Fragment_light_implicit.str ::
                  [])
     in
-    let iprg = compile ~debug:true ~version:"460" light_implicit_shader in
+    let iprg = compile ~version:"460" light_implicit_shader in
     let iprg = float_attr iprg "in_position" in
 
     let iprg = float_mat3_uniform iprg "NormalMatrix" in
