@@ -16,7 +16,7 @@ type env = {
 let default_env =
   { color = [|0.75;0.75;0.4;1.0|];
     back_color = Some [|0.75;0.4;0.4;1.0|];
-    line_color = [|0.0;0.0;1.0;1.0|];
+    line_color = [|1.0;1.0;1.0;1.0|];
     specular = 0.25;
     shininess = 50.;
     precision = 1e-1;
@@ -329,6 +329,9 @@ let pause time =
     Unix.sleepf 0.1;
   done
 
+let stop_pause () =
+  continue_pause := false
+
 let run (commands:cmds) =
   let env = ref default_env in
   let%parser color =
@@ -344,6 +347,8 @@ let run (commands:cmds) =
           E.fun_table :=
             Expression.StringMap.add
               id { variables; value = e; fname = id } !E.fun_table)
+    ; "print" (e::E.parse) =>
+        (fun () -> Format.printf "%a\n%!" (fun fmt -> write fmt)  e)
     ; "surface" (id::ident) ':' (e::E.parse)
             (bound :: ~? ("bound" (e::E.parse) => e)) =>
         (fun () -> commands.add !env ?bound id e)

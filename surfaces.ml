@@ -260,6 +260,8 @@ let frames = ref 0
 let speedX = ref 0.0
 let speedY = ref 0.0
 let speedZ = ref 0.0
+let speedNear = ref 0.0
+let speedFar = ref 0.0
 let center = ref 5.0
 let translateX a =  translateView := mul (translate a 0.0 0.0) !translateView
 let translateY a =  translateView := mul (translate 0.0 a 0.0) !translateView
@@ -278,6 +280,10 @@ let draw () =
   if !speedY <> 0.0 then rotateY (!speedY *. delta);
   if !speedX <> 0.0 then rotateX (!speedX *. delta);
   if !speedZ <> 0.0 then translateZ (!speedZ *. delta);
+  if !speedFar <> 0.0 then
+    far := max (!far +. !speedFar *. delta) !near;
+  if !speedNear <> 0.0 then
+    near := min (max (!near +. !speedNear *. delta) 0.1) !far;
   clear [ gl_color_buffer ];
   viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight;
   if !surfaces <> [] then dessine_implicit (t -. firsttime);
@@ -327,22 +333,24 @@ let _ = set_key_press_callback ctxt (fun ~key ~state ~x ~y ->
     else if key = Key.N then
       begin
         if (state :> int) land (Modifier.shift :> int) != 0 then
-          near := max 0.1 (!near -. 0.1)
+          speedNear := -1.0
         else
-          near := min !far (!near +. 0.1);
-        Printf.printf "near = %f\n%!" !near;
+          speedNear := 1.0
+      end
+    else if key = Key.F then
+      begin
+        if (state :> int) land (Modifier.shift :> int) != 0 then
+          speedFar := -1.0
+        else
+          speedFar := 1.0
       end
     else if key = Key.I then
       begin
         do_text := not !do_text
       end
-    else if key = Key.F then
+    else if key = Key.Space then
       begin
-        if (state :> int) land (Modifier.shift :> int) != 0 then
-          far := max !near (!far -. 0.1)
-        else
-          far := !far +. 0.1;
-        Printf.printf "far = %f\n%!" !far;
+        stop_pause ()
       end
     else
       Printf.printf "key: %s state: %d x:%d y:%d\n%!"
