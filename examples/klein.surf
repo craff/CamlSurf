@@ -1,0 +1,11 @@
+let k = (x^2+y^2+z^2+2*y-1)*((x^2+y^2+z^2-2*y-1)^2 - 8*z^2) + 16*x*z*(x^2+y^2+z^2-2*y-1);
+
+color = (0.5,0.3,1.0,0.35);
+back_color = none;
+far = 20;
+translateZ 5;
+surface klein : k;
+line_color = (1.0,1.0,1.0);
+curve X : cos(5*x) on klein;
+curve Y : cos(5*y) on klein;
+curve Z : cos(5*z) on klein;
