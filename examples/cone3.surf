@@ -53,6 +53,6 @@ sleep 5;
 
 {
   color = (0.2,0.2,0.9,0.35);
-  back_color = (0.2,0.2,0.9,0.35);
+  back_color = none;
   surface cubic : cubic bound x^2 + y^2 - 6;
 }

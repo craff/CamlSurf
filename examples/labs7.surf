@@ -3,6 +3,4 @@ let t5 = x^7-21*x^5*y^2+35*x^3*y^4-7*x*y^6+7*x^6+21*x^4*y^2+21*x^2*y^4+7*y^6-57*
 far = 25;
 translateZ 12;
 rotateX 1.57;
-precision = 1e-2;
-mindivs = 0;
 surface t5 : t5 bound x^2+y^2+z^2 - 64;

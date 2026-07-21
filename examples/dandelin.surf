@@ -5,7 +5,7 @@ let c(x,y,z) = x^2-y^2+z^2;
 
 {
   color = (0.3, 0.3, 0.9, 0.3);
-  back_color = (0.3, 0.3, 0.9, 0.3);
+  back_color = none;
   surface c : c(x,y,z) bound (y-5)*(y+5);
 }
 

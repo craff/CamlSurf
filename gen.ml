@@ -5,7 +5,7 @@ open E
 
 type env = {
     color : float Array.t;
-    back_color : float Array.t;
+    back_color : float Array.t option;
     line_color : float Array.t;
     specular : float;
     shininess : float;
@@ -15,12 +15,12 @@ type env = {
 
 let default_env =
   { color = [|0.75;0.75;0.4;1.0|];
-    back_color = [|0.75;0.4;0.4;1.0|];
+    back_color = Some [|0.75;0.4;0.4;1.0|];
     line_color = [|0.0;0.0;1.0;1.0|];
     specular = 0.25;
     shininess = 50.;
     precision = 1e-1;
-    mindivs = 10;
+    mindivs = 0;
   }
 
 type curve =
@@ -133,6 +133,10 @@ let dispatcher surfaces =
   Format.fprintf fmt "void init_surfaces() {\n";
   let fn s =
     let env = s.env in
+    let back_color = match env.back_color with
+      | None -> env.color
+      | Some c -> c
+    in
     Format.fprintf fmt
       "  surfaces[LASTS] = surface(
            LASTS, %d, %.12f, vec4(%.12f,%.12f,%.12f,%.12f),
@@ -141,7 +145,7 @@ let dispatcher surfaces =
        "
       env.mindivs env.precision
       env.color.(0) env.color.(1) env.color.(2) env.color.(3)
-      env.back_color.(0) env.back_color.(1) env.back_color.(2) env.back_color.(3)
+      back_color.(0) back_color.(1) back_color.(2) back_color.(3)
       env.specular env.shininess
   in
   List.iter fn surfaces;
@@ -352,7 +356,9 @@ let run (commands:cmds) =
     ; "color" "=" (color::color) =>
         (fun () -> env := { !env with color })
     ; "back_color" "=" (back_color::color) =>
-        (fun () -> env := { !env with back_color })
+        (fun () -> env := { !env with back_color = Some back_color })
+    ; "back_color" "=" "none" =>
+        (fun () -> env := { !env with back_color = None })
     ; "line_color" "=" (line_color::color) =>
         (fun () -> env := { !env with line_color })
     ; "specular" "=" (specular::FLOAT) =>

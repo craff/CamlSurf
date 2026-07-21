@@ -1,4 +1,4 @@
 let f(x,y,z)= sin(20*x)*sin(20*y)*sin(20*z) - 0.1*(x^2+y^2+z^2-1);
-precision = 1e-2;
 far = 30;
+near = 4;
 surface f : f(x,y,z);
