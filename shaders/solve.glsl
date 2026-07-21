@@ -14,21 +14,7 @@ vec3 dicho(int si, vec3 e,vec3 dir,
 	   if (un == ua || un == ub) { ur = un; return x; }
 
            float fn = f(si,x);
-/*         float d = dot(df(si,x), dir);
 
-           if (abs(d) > EPS) {
-		un = un - fn / d;
-                x = e + un * dir;
-
-                if (un <= ua || un >= ub) {
-		    un = umid;
-                    x = mid;
-		} else {
-  		    fn = f(si,x);
-		}
-            }
-
-*/
 	    if (fn == 0) {
 	        ur = un;
 		return x;
@@ -86,7 +72,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
           ub = near + step * float(i);
           x = e + ub * dir;
           fb = f(si,x);
-	  float dfb = dot(df(si,x),dir);
+	  dfb = dot(df(si,x),dir);
         }
 
 	float c = ub - ua;
@@ -94,7 +80,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	float B = (3*(fb-fa)-c*(2*dfa + dfb))/(c*c);
 	float C = (c*(dfa + dfb) - 2*(fb - fa))/(c*c*c);
 	float D = B*B - 3*A*C;
-	float u1 = ua, u2 = ua, uc = (ua + ub)/2, u3 = uc;
+	float t = (rand() - 0.5) * 1e-1 + 0.5;
+	float u1 = ua, u2 = ua, uc = t*ua + (1-t)*ub, u3 = uc;
 	vec3 xc = vec3(0);
 	float fc = 0;
 	int mid = 3;
@@ -108,8 +95,19 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	if (u2 < u1) {
 	  float tmp = u1; u1 = u2; u2 = tmp;
 	}
+	if (!(ua < u1 && u1 < ub)) {
+	  float t = (rand() - 0.5) * 1e-1 + 0.75;
+	  u1 = t*ua + (1-t)*ub;
+	}
+	if (!(ua < u2 && u2 < ub)) {
+	  float t = (rand() - 0.5) * 1e-1 + 0.25;
+	  u2 = t*ua + (1-t)*ub;
+	}
+	if (u2 < u1) {
+	  float tmp = u1; u1 = u2; u2 = tmp;
+	}
 	if (u3 < u1) {
-	  float tmp = u1; u1 = u3; u2 = u1; u3 = tmp;
+	  float tmp = u1; u1 = u3; u3 = u2; u2 = tmp;
 	  mid = 1;
 	} else if (u3 < u2) {
 	  float tmp = u2; u2 = u3; u3 = tmp;
@@ -119,37 +117,39 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	float fs[5];
 	int sq = 0;
 	us[sq] = ua; fs[sq++] = fa;
-	float error = 0.0;
+	bool bad=false;
 	float mab = min(abs(fa),abs(fb));
-	if (ua < u1 && u1 < ub) {
+	{
 	   x = e + u1 * dir;
 	   float fx = f(si,x);
 	   us[sq] = u1; fs[sq++] = fx;
 	   float X = u1 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   error = abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x)));
+	   float error = abs((fx - f3x)/fx);
+	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
 	   if (mid == 1) { xc = x; fc = fx; }
 	}
-	if (ua < u2 && u2 < ub) {
+	if (!bad || mid == 2) {
 	   x = e + u2 * dir;
 	   float fx = f(si,x);
 	   us[sq] = u2; fs[sq++] = fx;
 	   float X = u2 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   error = max(error, abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x))));
+	   float error = abs((fx - f3x)/fx);
+	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
 	   if (mid == 2) { xc = x; fc = fx; }
 	}
-	if (ua < u3 && u3 < ub) {
+	if (!bad || mid == 3) {
 	   x = e + u3 * dir;
 	   float fx = f(si,x);
 	   us[sq] = u3; fs[sq++] = fx;
 	   float X = u3 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   error = max(error, abs(fx - f3x)/min(mab,min(abs(fx),abs(f3x))));
+	   float error = abs((fx - f3x)/fx);
+	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
 	   if (mid == 3) { xc = x; fc = fx; }
 	}
-	if (!(error <= surf.prec) && sp <= SSIZE - 2 &&
-	     uc != ua && uc != ub) {
+	if (bad && sp <= SSIZE - 2 && uc != ua && uc != ub) {
            ustack[sp] = ub;
 	   fstack[sp] = fb;
 	   dfstack[sp++] = dfb;

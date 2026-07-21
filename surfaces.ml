@@ -138,7 +138,7 @@ let mk_prog surfaces =
        of_string gl_vertex_shader Vertex_implicit.str ::
          of_string gl_fragment_shader Preambule.str ::
            glsl_curves @ glsl_surfaces @ glsl_dispatcher ::
-             of_string gl_fragment_shader Solve2.str ::
+             of_string gl_fragment_shader Solve.str ::
                of_string gl_fragment_shader Fragment_light_implicit.str ::
                  [])
     in

@@ -2,6 +2,8 @@ void main()
 {
   init_surfaces();
   vec3 ipos = (InvModelView * vec4(pos,1.0)).xyz;
+  srand(uint(512u*ipos.x) + 4096u * uint(ipos.y) + 1024u*1024u*uint(time));
+
   vec3 ieyePos = (InvModelView * vec4(eyePos,1.)).xyz;
   vec3 res[MAXLAYERS];
   int surfs[MAXLAYERS];

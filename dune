@@ -28,8 +28,8 @@
    (run glsl_to_ml %{deps}))))
 
 (rule
- (target solve2.ml)
- (deps shaders/solve2.glsl)
+ (target solve.ml)
+ (deps shaders/solve.glsl)
  (action
   (with-stdout-to %{target}
    (run glsl_to_ml %{deps}))))
@@ -57,13 +57,13 @@
 (executable
  (name surfaces_x11)
  (public_name surfaces_x11)
- (modules surfaces_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve2 vertex_implicit  vertex_text  )
+ (modules surfaces_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve vertex_implicit  vertex_text  )
  (flags (:standard -w -6))
  (libraries gles3 gles3-x11 formal))
 
 (executable
  (name surfaces_wayland)
  (public_name surfaces_wayland)
- (modules surfaces_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve2  vertex_implicit  vertex_text  )
+ (modules surfaces_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve  vertex_implicit  vertex_text  )
  (flags (:standard -w -6))
  (libraries gles3 gles3-wayland formal))

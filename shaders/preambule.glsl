@@ -10,28 +10,22 @@ uniform float near;
 in vec3 pos;
 out vec4 FragColor;
 
-float ipow(float x, int n)
+uint rng_state;
+
+void srand(uint seed)
 {
-    if (n == 0)
-        return 1.0;
+    rng_state = seed;
+}
 
-    bool neg = n < 0;
-    if (neg)
-        n = -n;
+uint rand_uint()
+{
+    rng_state = 1664525u * rng_state + 1013904223u;
+    return rng_state;
+}
 
-    float r = 1.0;
-    float p = x;
-
-    while (n > 0)
-    {
-        if ((n & 1) != 0)
-            r *= p;
-
-        p *= p;
-        n >>= 1;
-    }
-
-    return neg ? 1.0 / r : r;
+float rand()
+{
+    return float(rand_uint()) * (1.0 / 4294967296.0);
 }
 
 struct surface {
