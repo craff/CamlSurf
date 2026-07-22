@@ -85,7 +85,6 @@ let add_msg, text_texture, text_size, text_reshape =
         cfg.depth_size cfg.samples
     ]
   in
-  List.iter (Printf.printf "%s\n%!") init_msgs;
   let messages = ref init_msgs in
   let texture = ref (Textures.gen_gc_texture ()) in
 
@@ -98,7 +97,6 @@ let add_msg, text_texture, text_size, text_reshape =
   in
   let _ = set_shader () in
   (fun msg ->
-    Printf.printf "%s\n%!" msg;
     let rec limit n l =
       match n, l with
       | 0, _ | _, [] -> []
