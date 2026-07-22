@@ -2,7 +2,7 @@ vec3 dicho(int si, vec3 e,vec3 dir,
            float ua,float fa,
 	   float ub,float fb,
 	   out float ur) {
-     if (fa == 0) {
+     if (fa == 0.0) {
        ur = ua;
        return e + ua * dir;
      }
@@ -15,7 +15,7 @@ vec3 dicho(int si, vec3 e,vec3 dir,
 
            float fn = f(si,x);
 
-	    if (fn == 0) {
+	    if (fn == 0.0) {
 	        ur = un;
 		return x;
 	    }
@@ -77,18 +77,18 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 
 	float c = ub - ua;
 	float A = dfa;
-	float B = (3*(fb-fa)-c*(2*dfa + dfb))/(c*c);
-	float C = (c*(dfa + dfb) - 2*(fb - fa))/(c*c*c);
-	float D = B*B - 3*A*C;
+	float B = (3.0*(fb-fa)-c*(2.0*dfa + dfb))/(c*c);
+	float C = (c*(dfa + dfb) - 2.0*(fb - fa))/(c*c*c);
+	float D = B*B - 3.0*A*C;
 	float t = (rand() - 0.5) * 1e-1 + 0.5;
-	float u1 = ua, u2 = ua, u3 = t*ua + (1-t)*ub, uc, fc;
+	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub, uc, fc;
 	vec3 xc;
-	if (B > 0 && D >= 0) {
+	if (B > 0.0 && D >= 0.0) {
 	  float tmp = -B - sqrt(D);
-	  u1 = ua + tmp/(3*C); u2 = ua + A/tmp;
-        } else if (D >= 0) {
+	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
+        } else if (D >= 0.0) {
 	  float tmp = -B + sqrt(D);
-	  u1 = ua + tmp/(3*C); u2 = ua + A/tmp;
+	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
 	}
 	if (u2 < u1) {
 	  float tmp = u1; u1 = u2; u2 = tmp;
@@ -96,17 +96,17 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	bool test1 = ua >= u1 || u1 >= ub, test2 = ua >= u2 || u2 >= ub;
 	if (test1 && test2) {
 	  float t = (rand() - 0.5) * 1e-1 + 0.75;
-	  u1 = t*ua + (1-t)*ub;
+	  u1 = t*ua + (1.0-t)*ub;
 	  t = (rand() - 0.5) * 1e-1 + 0.25;
-	  u2 = t*ua + (1-t)*ub;
+	  u2 = t*ua + (1.0-t)*ub;
 	}
 	else if (test2) {
 	  float t = (rand() - 0.5) * 1e-1 + u1<u3 ? 0.25 : 0.75;
-	  u2 = t*ua + (1-t)*ub;
+	  u2 = t*ua + (1.0-t)*ub;
 	}
 	else if (test1) {
 	  float t = (rand() - 0.5) * 1e-1 + u2<u3 ? 0.25 : 0.75;
-	  u1 = t*ua + (1-t)*ub;
+	  u1 = t*ua + (1.0-t)*ub;
 	}
 	if (u2 < u1) {
 	  float tmp = u1; u1 = u2; u2 = tmp;
@@ -164,7 +164,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	us[4] = ub; fs[4] = fb;
 	bool brk = false;
 	for (int j = 0; j < 5; j++) {
-	   if (fs[j] * fs[j+1] <= 0) {
+	   if (fs[j] * fs[j+1] <= 0.0) {
 	      float ur;
 	      x = dicho(si,e,dir,us[j],fs[j],us[j+1],fs[j+1],ur);
 	      if (bf(si,x) > 0.0) continue;
@@ -180,8 +180,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	            ures[ssr] = ur;
 		    res[ssr] = x;
   	            surfs[ssr++] = si;
-		    if ((surf.color.a >= 1.0 && dot(df(si,x),dir) > 0) ||
-		        (surf.back_color.a >= 1.0 && dot(df(si,x),dir) < 0)) {
+		    if ((surf.color.a >= 1.0 && dot(df(si,x),dir) > 0.0) ||
+		        (surf.back_color.a >= 1.0 && dot(df(si,x),dir) < 0.0)) {
 		       ubest = ur;
 		       sr = ssr;
 		       brk = true;

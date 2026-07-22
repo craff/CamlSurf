@@ -2,7 +2,7 @@ void main()
 {
   init_surfaces();
   vec3 ipos = (InvModelView * vec4(pos,1.0)).xyz;
-  srand(uint(512u*ipos.x) + uint(4096u*ipos.y) + uint(1024u*1024u*time));
+  srand(uint(512.0*ipos.x) + uint(4096.0*ipos.y) + uint(1024.0*1024.0*time));
 
   vec3 ieyePos = (InvModelView * vec4(eyePos,1.)).xyz;
   vec3 res[MAXLAYERS];
@@ -27,7 +27,7 @@ void main()
     /* The ambient term will always be present */
     vec4 mcolor, col, line_color;
     float color_factor = cf(surf.id,p,line_color);
-    if (dot(n, m_position.xyz - eyePos) > 0) {
+    if (dot(n, m_position.xyz - eyePos) > 0.0) {
       mcolor = surf.color;
     } else {
       mcolor = surf.back_color;
