@@ -19,6 +19,25 @@ One or more script can be provided as argument on the command line:
 ./surface_x11.exe script1.surf script2.surf ...
 ```
 
+The usage of the command is:
+
+```
+surfaces_x11.exe: [options] [<script1>] [<script2>] ...
+  --debug give debugging information on shaders (dev only)
+  --width specify the initial window width (default 800)
+  --height specify the initial window height (default 600)
+  --openGL use openGL 4 instead of GLES (experimental)
+  -help  Display this list of options
+  --help  Display this list of options
+```
+
+Remark: currently, CamlSurf support the following backend:
+
+- X11
+- Wayland
+
+Windows and Cocoa (OS X) backend are planned
+
 Extra commands may be entered on the terminal after the last script is read.
 
 Basic syntax

@@ -6,10 +6,37 @@ open Buffers
 open Matrix
 open Formal.Gen
 
-(** simple example, using vertex buffers + one simple texture*)
+let usage_msg =
+  Printf.sprintf "%s: [options] [<script1>] [<script2>] ..."
+    (Filename.basename Sys.argv.(0))
+
+let gwidth = ref 800 and gheight = ref 600
+
+let debug = ref false
+let gles = ref true
+
+let input_files = ref []
+let anon_fun filename =
+  input_files := filename::!input_files
+
+let speclist =
+  [("--debug", Arg.Set  debug,
+    "give debugging information on shaders (dev only)");
+   ("--width", Arg.Set_int gwidth,
+    "specify the initial window width (default 800)");
+   ("--height", Arg.Set_int gheight,
+    "specify the initial window height (default 600)");
+   ("--openGL", Arg.Clear gles,
+    "use openGL 4 instead of GLES (experimental)");
+  ]
+
+let _ = Arg.parse speclist anon_fun usage_msg
+
+let input_files = List.rev !input_files
+let debug = !debug
+let gles = !gles
 
 (** keep the current width,height and ratio in a reference *)
-let gwidth = ref 800 and gheight = ref 600
 let ratio = ref (float !gwidth /. float !gheight)
 
 let config =
@@ -23,7 +50,7 @@ let config =
 
 
 (** initialization of the main window, and its viewport *)
-let ctxt = initialize ~config ~es:false ~width:!gwidth ~height:!gheight "test_gles2"
+let ctxt = initialize ~config ~gles ~width:!gwidth ~height:!gheight "CamlSurf"
 let _ = viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight
 
 (** the modelView matrix of the cube defining the position of the cube, from
@@ -58,7 +85,7 @@ let text_prg =
      of_string gl_vertex_shader Vertex_text.str ::
        of_string gl_fragment_shader Fragment_text.str :: [])
   in
-  let prg = compile ~version:"460" text_shader in
+  let prg = compile ~debug text_shader in
   let prg = float_attr prg "in_position"  in
   let prg = float_mat4_uniform prg "Projection" in
   let tex_coordinates =
@@ -140,7 +167,7 @@ let mk_prog surfaces =
                of_string gl_fragment_shader Fragment_light_implicit.str ::
                  [])
     in
-    let iprg = compile ~version:"460" light_implicit_shader in
+    let iprg = compile ~debug light_implicit_shader in
     let iprg = float_attr iprg "in_position" in
 
     let iprg = float_mat3_uniform iprg "NormalMatrix" in
@@ -385,7 +412,7 @@ let commands =
   ; rotateX; rotateY; rotateZ
   }
 
-let _d = Domain.spawn (fun () -> run commands; Egl.exit_loop ctxt)
+let _d = Domain.spawn (fun () -> run commands input_files; Egl.exit_loop ctxt)
 
 let _ = draw () (** draw once outside the loop, because all exceptions are caught
                    inside the main loop *)

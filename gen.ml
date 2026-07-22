@@ -332,7 +332,7 @@ let pause time =
 let stop_pause () =
   continue_pause := false
 
-let run (commands:cmds) =
+let run (commands:cmds) input_files =
   let env = ref default_env in
   let%parser color =
     '(' (r::FLOAT) ',' (g::FLOAT) ',' (b::FLOAT)
@@ -401,13 +401,12 @@ let run (commands:cmds) =
   try
     (* no need to stack the buffer of in_channel and those of Pacomb. So
        file desciptor are preferred. *)
-    for i = 1 to Array.length Sys.argv - 1 do
-      Printf.printf "reading %S\n%!" Sys.argv.(i);
+    List.iter (fun filename ->
+      Printf.printf "reading %S\n%!" filename;
       let _ = Pacomb.Pos.handle_exception ~error:(fun _ -> false)
-                (Pacomb.Grammar.parse_file file blank) Sys.argv.(i)
+                (Pacomb.Grammar.parse_file file blank) filename
       in
-      ()
-    done;
+      ()) input_files;
     Printf.printf "reading standard input\n%!";
 
     let line_action () = Printf.printf "=> %!" in
