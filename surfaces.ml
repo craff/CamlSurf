@@ -72,9 +72,9 @@ let projection () =
   (mul (perspective 45.0 !ratio !near !far) (lookat eyePos center eyeUp))
 
 let text_texture msg =
-  (Freetype.texture_of_text
+  Freetype.(texture_of_text
      ~line_stretch:1.3
-     ~font:"/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
+     ~font:(find_font ~family:"sans" ())
      ~size:32 ~alignment:Right msg)
 
 let _ = Shaders.set_debug false (* disable warnings *)
