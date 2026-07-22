@@ -5,7 +5,7 @@ CamlSurf
 
 
 CamlSurf provides a small scripting language for defining, animating and
-displaying implicit algebraic geometry.
+displaying implicit surfaces and curves.
 
 A script is a sequence of declarations and commands. Variables are immutable
 and may denote either scalar values or expressions. The language also supports
@@ -123,7 +123,7 @@ let sphere = x^2 + y^2 + z^2 - a;
 
 Variables are immutable, using a variable before giving its definition will
 not modify the value of the variable. In fact, an undefined name represents a
-variable (a parameter) and become a definition as soon as it is define.
+variable (a parameter) and become a definition as soon as it is defined.
 
 Redefining a name just hide the previous definition but does not change the
 value of expression using the old definition.
@@ -164,13 +164,13 @@ Special transformation on expressions
 Some operations are provided and may be used used inside expressions:
 
 - `simplify(p)` to perform basic simplification.
-- `develop(p)` to develop all polynomial within `p`.
-- `derive(p,var)` to derive an expression in a variable.
+- `develop(p)` to develop all polynomials within `p`.
+- `derive(p,var)` to derive an expression relative a variable.
 - `p[var1 <- e1, ..., varn <- en]` to perform substitution.
 
-A command allow to print expressions:
+A command allows to print expressions:
 
-- `print e`
+- `print e;`
 
 Example:
 
@@ -204,12 +204,12 @@ surface sphere :
   bound x^2+y^2+z^2-9;
 ```
 
-Only the connected component satisfying the bound < 0 is rendered.
+Only the points satisfying bound < 0 are rendered.
 
 Curves
 ------
 
-A curve is the intersection of two implicit surfaces.
+A curve is the intersection of two implicit surfaces, but it is draw on a surface.
 
 Syntax:
 
@@ -220,8 +220,7 @@ curve name : polynomial on surface;
 Example
 
 ```
-let p = z;
-curve equator : p on sphere;
+curve equator : y on sphere;
 ```
 
 Removing objects
@@ -247,19 +246,13 @@ properties. Properties currently include.
 - `line_color = (r,g,b,[,a])` : color for curves (default `(1.0,1.0,1.0,1.0)`)
 - `specular = value` : intensity of specular light (default 0.25)
 - `shininess = value` : dispersion of specular light (default 50)
-- `precision = value` : control the root finding algorithm. Shoud be in
-  `]0,1]`. Near 0, algorithme is more precise but slower. Conversely, near to
-  1 algorithme is faster but may loose some roots (default 0.1).
+- `precision = value` : control the root finding algorithm. Should be in
+  `]0,1]`. Near 0, the algorithm is more precise but slower. Conversely, near to
+  1 the algorithm is faster but may loose some roots (default 0.1).
 - `mindivs = value` minimum number of subdivisions performed when searching for
   roots (default 0).
 
-Colors are specified as
-
-```
-(r,g,b,a)
-```
-
-where each component belongs to `[0,1]`.
+Colors are specified as `(r,g,b,a)` or `(r,g,b)` where each component belongs to `[0,1]`.
 
 A block may be used to modify rendering attributes locally. However,
 definition of expressions are always global.
@@ -276,24 +269,20 @@ Example to draw a transparent sphere not modifying the current color.
 
 Some global variables also control the rendering and affect all objects:
 
-- `far = value` (only parts of the surface nearer than the value will be displayed)
-- `near = value` (only parts of the surface further than the value will be
+- `far = value` (only parts of the surface nearer from the camera than the
+  provided value will be displayed)
+- `near = value` (only parts of the surface further from the camera than the
+  provided value will be
 - `translateX value`, `translateY value`, `translateZ value` translate the
   view
 - `rotateX value`, `rotateY value`, `rotateZ value` rotate the
-  view around `(0,0,0)`, alway aplied before the translation.
+  view around `(0,0,0)`, always applied before the translation.
 
 
 Animation
 ---------
 
-The predefined variable
-
-```
-time
-```
-
-contains the elapsed time in seconds.
+The predefined variable `time` contains the elapsed time in seconds.
 
 Example
 
@@ -325,11 +314,11 @@ Any pause may be interrupted with the space key.
 Key bindings
 ------------
 
-The following key binding are provided:
+The following key bindings are provided:
 
 - Right/Left : rotate around Y axes (vertical axes).
 - Up/Down : rotate around the X axes (horizontal axes).
-- PageUp/PageDown : translate along Z axes (axes orthodonal to the screen).
+- PageUp/PageDown : translate along Z axes (axes orthogonal to the screen).
 - Space : interrupt the current pause.
 - I : display or hide the information text displayed on the screen (giving fps).
 - F : increase the far parameter (decrease if shit is pressed).
