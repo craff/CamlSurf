@@ -340,8 +340,8 @@ The following key bindings are provided:
 - PageUp/PageDown : translate along Z axes (axes orthogonal to the screen).
 - Space : interrupt the current pause.
 - I : display or hide the information text displayed on the screen (giving fps).
-- F : increase the far parameter (decrease if shit is pressed).
-- N : increase the near parameter (decrease if shit is pressed).
+- F : increase the far parameter (decrease if shift is pressed).
+- N : increase the near parameter (decrease if shift is pressed).
 
 Example: cone/cubic intersection
 --------------------------------
