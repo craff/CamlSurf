@@ -2,7 +2,7 @@ void main()
 {
   init_surfaces();
   vec3 ipos = (InvModelView * vec4(pos,1.0)).xyz;
-  srand(uint(512.0*ipos.x) + uint(4096.0*ipos.y) + uint(1024.0*1024.0*time));
+  srand(uint(3293967297.0*ipos.x) + uint(2294966297.0*ipos.y) + uint(1294947297.0*time));
 
   vec3 ieyePos = (InvModelView * vec4(eyePos,1.)).xyz;
   vec3 res[MAXLAYERS];
