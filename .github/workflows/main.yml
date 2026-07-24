@@ -38,6 +38,7 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - run: |
+          opam pin add pacomb git+https://github.com/craff/pacomb.git -y
           opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
           opam pin add gles3 git+https://github.com/craff/gles3.git -y
           opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
@@ -49,16 +50,27 @@ jobs:
 
       - run: opam install CamlSurf-x11 CamlSurf-wayland
 
-  build-arch:
+  build-container:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        distro:
+          - archlinux
+          - fedora
+
     container:
-      image: ocaml/opam:archlinux
+      image: ocaml/opam:${{ matrix.distro }}
       options: --user root
 
     steps:
       - name: Install tools
         run: |
-          sudo pacman -Sy --noconfirm nodejs npm git
+          if [ "${{ matrix.distro }}" = "archlinux" ]; then
+            pacman -Sy --noconfirm nodejs npm git
+          else
+            dnf install -y nodejs npm git
+          fi
 
       - name: Checkout code
         uses: actions/checkout@v5
@@ -79,6 +91,7 @@ jobs:
           su opam -c '
             opam switch set ocaml5.5
             cd "$GITHUB_WORKSPACE"
+            opam pin add pacomb git+https://github.com/craff/pacomb.git -y
             opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
             opam pin add gles3 git+https://github.com/craff/gles3.git -y
             opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
@@ -94,85 +107,10 @@ jobs:
             opam exec -- dune build @install
             '
 
-      - name: Pin
-        run: |
-          su opam -c '
-            opam switch set ocaml5.5
-            cd "$GITHUB_WORKSPACE"
-            opam pin add -y gles3-stubs .
-            opam pin add -y gles3 .
-            opam pin add -y gles3-x11 .
-            opam pin add -y gles3-wayland .
-            '
-
       - name: Install
         run: |
           su opam -c '
             opam switch set ocaml5.5
             cd "$GITHUB_WORKSPACE"
-            opam install CamlSurf-x11 CamlSurf-wayland
-            '
-
-  build-fedora:
-    runs-on: ubuntu-latest
-    container:
-      image: ocaml/opam:fedora
-      options: --user root
-
-    steps:
-      - name: Install tools
-        run: |
-          dnf install -y nodejs npm git
-
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Fix permissions
-        run: |
-          chown -R opam:opam "$GITHUB_WORKSPACE"
-
-      - name: Opam init
-        run: |
-          su opam -c '
-            opam init --disable-sandboxing -y
-            opam switch create ocaml5.5 5.5.0
-            '
-
-      - name: Deps
-        run: |
-          su opam -c '
-            opam switch set ocaml5.5
-            cd "$GITHUB_WORKSPACE"
-            opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
-            opam pin add gles3 git+https://github.com/craff/gles3.git -y
-            opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
-            opam pin add gles3-wayland git+https://github.com/craff/gles3.git -y
-            opam install ./CamlSurf-x11.opam ./CamlSurf-wayland.opam --deps-only --with-test
-            '
-
-      - name: Build
-        run: |
-          su opam -c '
-            opam switch set ocaml5.5
-            cd "$GITHUB_WORKSPACE"
-            opam exec -- dune build @install
-            '
-
-      - name: Pin
-        run: |
-          su opam -c '
-            opam switch set ocaml5.5
-            cd "$GITHUB_WORKSPACE"
-            opam pin add -y gles3-stubs .
-            opam pin add -y gles3 .
-            opam pin add -y gles3-x11 .
-            opam pin add -y gles3-wayland .
-            '
-
-      - name: Install
-        run: |
-          su opam -c '
-            opam switch set ocaml5.5
-            cd "$GITHUB_WORKSPACE"
-            opam install CamlSurf-x11 CamlSurf-wayland
+            opam install ./CamlSurf-x11.opam ./CamlSurf-wayland.opam
             '

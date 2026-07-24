@@ -19,7 +19,7 @@
  (name CamlSurf-x11)
  (synopsis "A program to display and animate implicit surfaces and curves")
  (description "A program to display and animate implicit surfaces and curves")
- (depends ocaml gles3 gles3-x11 mlmpfr zarith pacomb)
+ (depends ocaml gles3 gles3-x11 pacomb)
  (tags
   ("surface" "curve" "geometry" "OpenGL")))
 
@@ -27,6 +27,6 @@
  (name CamlSurf-wayland)
  (synopsis "A program to display and animate implicit surfaces and curves")
  (description "A program to display and animate implicit surfaces and curves")
- (depends ocaml gles3 gles3-wayland mlmpfr zarith pacomb)
+ (depends ocaml gles3 gles3-wayland pacomb)
  (tags
   ("surface" "curve" "geometry" "OpenGL")))

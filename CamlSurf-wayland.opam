@@ -14,8 +14,6 @@ depends: [
   "ocaml"
   "gles3"
   "gles3-wayland"
-  "mlmpfr"
-  "zarith"
   "pacomb"
   "odoc" {with-doc}
 ]
