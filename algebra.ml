@@ -165,6 +165,7 @@ end
 (*                    Module EUCLIDIAN Ring of Caml integer                 *)
 (****************************************************************************)
 
+(*
 module Ring_Z =
   struct
     type elem = int
@@ -190,11 +191,12 @@ module Ring_Z =
     let normalize x = x
     let conjugate x = x
   end
-
+ *)
 (****************************************************************************)
 (*             Module EUCLIDIAN Ring of multi-precision integer             *)
 (****************************************************************************)
 
+(*
 module Ring_MZ =
   struct
     open Z
@@ -222,6 +224,7 @@ module Ring_MZ =
     let normalize x = x
     let conjugate x = x
   end
+ *)
 
 (****************************************************************************)
 (*                    Module Normed  Field of Caml float                    *)
@@ -267,6 +270,7 @@ module Field_R =
 (*                    Module Normed  Field of GNU MPFR float                    *)
 (****************************************************************************)
 
+(*
 module type Prec = sig val prec : int end
 
 let _ =
@@ -310,11 +314,13 @@ module Field_MPFR = functor (P : Prec) ->
     let normalize x = x
     let conjugate x = x
   end
+ *)
 
 (****************************************************************************)
 (*                 Module Field of multi-precision rationnal                *)
 (****************************************************************************)
 
+(*
 module Field_Q =
   struct
     open Q
@@ -348,7 +354,7 @@ module Field_Q =
     let abs = abs
     let conjugate x = x
   end
-
+ *)
 
 (****************************************************************************)
 (*                    Module Field of complex numbers                       *)
@@ -415,7 +421,7 @@ module Field_CP = functor (T : Atype) ->
   end
 
 module Field_C  = Field_CP (struct type t = float end)(Field_R)
-module Field_QC = Field_CP (struct type t = Q.t end)(Field_Q)
+(*module Field_QC = Field_CP (struct type t = Q.t end)(Field_Q)*)
 
 (* missing : The euclidian ring of Gauss integer *)
 

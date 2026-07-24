@@ -16,9 +16,17 @@
 (documentation https://raffalli.eu/CamlSurf)
 
 (package
- (name CamlSurf)
+ (name CamlSurf-x11)
  (synopsis "A program to display and animate implicit surfaces and curves")
  (description "A program to display and animate implicit surfaces and curves")
- (depends ocaml)
+ (depends ocaml gles3 gles3-x11 mlmpfr zarith pacomb)
+ (tags
+  ("surface" "curve" "geometry" "OpenGL")))
+
+(package
+ (name CamlSurf-wayland)
+ (synopsis "A program to display and animate implicit surfaces and curves")
+ (description "A program to display and animate implicit surfaces and curves")
+ (depends ocaml gles3 gles3-wayland mlmpfr zarith pacomb)
  (tags
   ("surface" "curve" "geometry" "OpenGL")))
