@@ -59,6 +59,7 @@
  (public_name surfaces_x11)
  (modules surfaces_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve vertex_implicit  vertex_text  )
  (flags (:standard -w -6))
+ (optional)
  (libraries gles3 gles3-x11 formal))
 
 (executable
@@ -66,4 +67,5 @@
  (public_name surfaces_wayland)
  (modules surfaces_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve  vertex_implicit  vertex_text  )
  (flags (:standard -w -6))
+ (optional)
  (libraries gles3 gles3-wayland formal))
