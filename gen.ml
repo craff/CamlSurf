@@ -19,7 +19,7 @@ let default_env =
     line_color = [|1.0;1.0;1.0;1.0|];
     specular = 0.25;
     shininess = 50.;
-    precision = 1e-1;
+    precision = 0.5;
     mindivs = 0;
   }
 
@@ -123,9 +123,20 @@ let glsl name nature ?(bound=Cst (-1.0)) e =
        float z = p.z;\n\
        %a
        return vec3(dx,dy,dz);\n\
+     }\n
+     float f_d%s(vec3 p, out vec3 dres)\n\
+     {\n\
+       float x = p.x;\n\
+       float y = p.y;\n\
+       float z = p.z;\n\
+       %a
+       dres = vec3(dx,dy,dz);\n\
+       return res;\n\
      }\n%s"
-    fname write_defs [("res", e)] fname
-          write_defs [("dx", dxe);("dy", dye);("dz", dze)] color
+    fname write_defs [("res", e)]
+    fname write_defs [("dx", dxe);("dy", dye);("dz", dze)]
+    fname write_defs [("res", e);("dx", dxe);("dy", dye);("dz", dze)]
+          color
 
 let dispatcher surfaces =
   let res = Buffer.create 1024 in
@@ -164,6 +175,13 @@ let dispatcher surfaces =
   in
   List.iteri fn surfaces;
   Format.fprintf fmt "  default: return vec3(0.0);}\n}";
+  Format.fprintf fmt "float f_df(int id, vec3 p, out vec3 df) {\n\
+                        switch (id) {";
+  let fn id s =
+    Format.fprintf fmt "    case %d: return f_df_%s(p, df);" id s.name
+  in
+  List.iteri fn surfaces;
+  Format.fprintf fmt "  default: df = vec3(0.0); return 0.0;}\n}";
   Format.fprintf fmt "float cf(int id, vec3 p, out vec4 color) {\n\
                         switch (id) {";
   let fn id s =

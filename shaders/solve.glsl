@@ -50,8 +50,9 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
       surface surf = surfaces[si];
       float ua = near;
       vec3 x = e + ua * dir;
-      float fa = f(si,x);
-      float dfa = dot(df(si,x),dir);
+      vec3 dtmp;
+      float fa = f_df(si,x,dtmp);
+      float dfa = dot(dtmp,dir);
       float ub = ua;
       float fb = fa;
       float dfb = dfa;
@@ -71,8 +72,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	  i += 1;
           ub = near + step * float(i);
           x = e + ub * dir;
-          fb = f(si,x);
-	  dfb = dot(df(si,x),dir);
+          fb = f_df(si,x,dtmp);
+	  dfb = dot(dtmp,dir);
         }
 
 	float c = ub - ua;
@@ -81,7 +82,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	float C = (c*(dfa + dfb) - 2.0*(fb - fa))/(c*c*c);
 	float D = B*B - 3.0*A*C;
 	float t = (rand() - 0.5) * 1e-1 + 0.5;
-	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub, uc, fc;
+	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub, uc, fc, dfc;
 	vec3 xc;
 	if (B > 0.0 && D >= 0.0) {
 	  float tmp = -B - sqrt(D);
@@ -118,35 +119,41 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	}
 	float us[5];
 	float fs[5];
+	float dfs[5];
 	bool bad=false;
-	float mab = min(abs(fa),abs(fb));
 	{
 	   x = e + u2 * dir;
-	   float fx = f(si,x);
-	   us[2] = u2; fs[2] = fx;
+	   float fx = f_df(si,x,dtmp);
+	   float dfx = dot(dtmp,dir);
+	   us[2] = u2; fs[2] = fx; dfs[2] = dfx;
 	   float X = u2 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float error = abs((fx - f3x)/fx);
-	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
-	   xc = x; fc = fx; uc = u2;
+	   float df3x = A + (2.0*B + 3.0*C*X)*X;
+	   float R =  abs(fx - f3x) + abs(dfx - df3x)*(ub - ua)/3.0;
+	   if (!(R <= surf.prec * min(abs(fx),abs(f3x)))) bad = true;
+	   xc = x; fc = fx; dfc = dfx; uc = u2;
 	}
 	if (!bad) {
 	   x = e + u1 * dir;
-	   float fx = f(si,x);
-	   us[1] = u1; fs[1] = fx;
+	   float fx = f_df(si,x,dtmp);
+	   float dfx = dot(dtmp,dir);
+	   us[1] = u1; fs[1] = fx; dfs[1] = dfx;
 	   float X = u1 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float error = abs((fx - f3x)/fx);
-	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
+	   float df3x = A + (2.0*B + 3.0*C*X)*X;
+	   float R =  abs(fx - f3x) + abs(dfx - df3x)*(ub - ua)/3.0;
+	   if (!(R <= surf.prec * min(abs(fx),abs(f3x)))) bad = true;
 	}
 	if (!bad) {
 	   x = e + u3 * dir;
-	   float fx = f(si,x);
-	   us[3] = u3; fs[3] = fx;
+	   float fx = f_df(si,x,dtmp);
+	   float dfx = dot(dtmp,dir);
+	   us[3] = u3; fs[3] = fx; dfs[3] = dfx;
 	   float X = u3 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float error = abs((fx - f3x)/fx);
-	   if (!(abs(fx - f3x) <= surf.prec * abs(fx))) bad = true;
+	   float df3x = A + (2.0*B + 3.0*C*X)*X;
+	   float R =  abs(fx - f3x) + abs(dfx - df3x)*(ub - ua)/3.0;
+	   if (!(R <= surf.prec * min(abs(fx),abs(f3x)))) bad = true;
 	}
 	if (bad && sp <= SSIZE - 2 && uc != ua && uc != ub) {
            ustack[sp] = ub;
@@ -154,7 +161,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   dfstack[sp++] = dfb;
 	   ustack[sp] = uc;
 	   fstack[sp] = fc;
-	   dfstack[sp++] = dot(df(si,xc),dir);;
+	   dfstack[sp++] = dfc;
 	   ub = ua;
 	   fb = fa;
 	   dfb = dfa;
