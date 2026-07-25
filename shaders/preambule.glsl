@@ -31,7 +31,8 @@ float rand()
 struct surface {
   int id;
   int mindivs;
-  float prec;
+  float prec1;
+  float prec2;
   vec4 color;
   vec4 back_color;
   float specular;

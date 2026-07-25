@@ -28,18 +28,19 @@ function WH(fn::DFun, f3, x::Float64, a::Float64, b::Float64)
     u = (x - a)
     f3x = ((f3.C * u + f3.B) * u + f3.A) * u + f3.fa
     df3x = (3*f3.C * u + 2*f3.B) * u + f3.A
-    D = min(abs(fx),abs(f3x))
-    R = abs(f3x-fx)/D + abs(df3x-dfx)/D*(b-a)/6
+    D = abs(fx) + abs(f3x)
+    R1 = abs(f3x-fx)/D
+    R2 = abs(df3x-dfx)*(b-a)/D
     #W = abs((df3x-dfx)/fx)
-    return R, fx, dfx
+    return R1, R2, fx, dfx
 end
 
-function isolate(fn::DFun, A::Float64, B::Float64; bound = 1, alea=1e-2, depth=0)
+function isolate(fn::DFun, A::Float64, B::Float64;
+                 bound1 = .33, bound2 = 2., alea=1e-2)
     roots = Tuple{Float64,Float64}[]
     count = 0
-    depth0 = depth
     function loop(a::Float64, fa::Float64, dfa,
-                  b::Float64, fb::Float64, dfb, depth::Int)
+                  b::Float64, fb::Float64, dfb)
         #println("loop:", a, " ", fa," ", b," ", fb)
         H = hermite3_make(fn,a,fa,dfa,b,fb,dfb)
         D = H.B*H.B - 3*H.A*H.C;
@@ -75,14 +76,16 @@ function isolate(fn::DFun, A::Float64, B::Float64; bound = 1, alea=1e-2, depth=0
         if (x1 > x2)
             (x1,x2) = (x2,x1)
         end
-        R1, fx1, dfx1 = WH(fn,H,x1,a,b)
-        R2, fx2, dfx2 = WH(fn,H,x2,a,b)
-        R3, fx3, dfx3 = WH(fn,H,x3,a,b)
+        R11, R12, fx1, dfx1 = WH(fn,H,x1,a,b)
+        R21, R22, fx2, dfx2 = WH(fn,H,x2,a,b)
+        R31, R32, fx3, dfx3 = WH(fn,H,x3,a,b)
         #println("xs:",x1," ", fx1, " ", R1, "\n",
         #          x2," ", fx2, " ", R2, "\n",
         #          x3," ", fx3, " ", R3)
-        bad = !(R1 < bound) || !(R2 < bound) || !(R3 < bound)
-        if ((bad || depth > 0) && (x3 != a && x3 != b))
+        bad = !(R11 < bound1) || !(R12 < bound2) ||
+              !(R21 < bound1) || !(R22 < bound2) ||
+              !(R31 < bound1) || !(R32 < bound2)
+        if (bad && (x3 != a && x3 != b))
             # if abs(fx1) > abs(fa) && abs(fx1) > abs(fb)
             #     if abs(fx2) > abs(fx1)
             #         loop(a,fa,x2,fx2)
@@ -95,9 +98,8 @@ function isolate(fn::DFun, A::Float64, B::Float64; bound = 1, alea=1e-2, depth=0
             #     loop(a,fa,x2,fx2)
             #     loop(x2,fx2,b,fb)
             # else
-                depth = bad ? depth0 : depth - 1
-                loop(a,fa,dfa,x3,fx3,dfx3,depth)
-                loop(x3,fx3,dfx3,b,fb,dfb,depth)
+                loop(a,fa,dfa,x3,fx3,dfx3)
+                loop(x3,fx3,dfx3,b,fb,dfb)
             #end
         else
             count += 1
@@ -141,7 +143,7 @@ function isolate(fn::DFun, A::Float64, B::Float64; bound = 1, alea=1e-2, depth=0
     end
 
     loop(A,fn.f(A),fn.df(A),
-         B,fn.f(B),fn.df(B),depth0)
+         B,fn.f(B),fn.df(B))
     return roots,  length(roots), count
 end
 

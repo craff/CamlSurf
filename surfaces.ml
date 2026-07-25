@@ -325,62 +325,47 @@ let draw () =
     lastfpstime  := t
   )
 
-let _ = set_key_release_callback ctxt (fun ~key ~state:_ ~x:_ ~y:_ ->
-            if key = Key.Escape then exit_loop ctxt
-            else if key = Key.Right || key = Key.Left then
-              speedY := 0.0
-            else if key = Key.Up || key = Key.Down then
-              speedX := 0.0
-            else if key = Key.PageUp || key = Key.PageDown then
-              speedZ := 0.0)
+let _ =
+  set_key_release_callback ctxt
+    (fun ~key ~state:_ ~x:_ ~y:_ ->
+      let open Key in
+      match key with
+      | Escape            -> exit_loop ctxt
+      | Right  | Left     -> speedY := 0.0
+      | Up     | Down     -> speedX := 0.0
+      | PageUp | PageDown -> speedZ := 0.0
+      | N                 -> speedNear := 0.0
+      | F                 -> speedFar := 0.0
+      | _                 -> ())
 
 (** call back for key and mouse, just for testing *)
-let _ = set_key_press_callback ctxt (fun ~key ~state ~x ~y ->
-  try
-    if key = Key.Escape then exit_loop ctxt
-    else if key = Key.Right then
-      speedY := -5e-1
-    else if key = Key.Left then
-      speedY := 5e-1
-    else if key = Key.Up then
-      speedX := 5e-1
-    else if key = Key.Down then
-      speedX := -5e-1
-    else if key = Key.PageUp then
-      speedZ := 5e-1
-    else if key = Key.PageDown then
-      speedZ := -5e-1
-  (*  else if key = Key.P then
-      begin
-        if (state :> int) land (Modifier.shift :> int) != 0 then decr prg_N else incr prg_N;
-        Printf.printf "N = %d\n%!" !prg_N;
-        end*)
-    else if key = Key.N then
-      begin
-        if (state :> int) land (Modifier.shift :> int) != 0 then
-          speedNear := -1.0
-        else
-          speedNear := 1.0
-      end
-    else if key = Key.F then
-      begin
-        if (state :> int) land (Modifier.shift :> int) != 0 then
-          speedFar := -1.0
-        else
-          speedFar := 1.0
-      end
-    else if key = Key.I then
-      begin
-        do_text := not !do_text
-      end
-    else if key = Key.Space then
-      begin
-        stop_pause ()
-      end
-    else
-      Printf.printf "key: %s state: %d x:%d y:%d\n%!"
-        (Key.name key) (state :> int) x y
-  with e -> Printf.printf "exception: %s" (Printexc.to_string e))
+let _ =
+  set_key_press_callback ctxt
+    (fun ~key ~state ~x ~y ->
+      try
+        let open Key in
+        let s =
+          if (state :> int) land (Modifier.shift :> int) != 0 then
+            -1.0
+          else
+            1.0
+        in
+        match key with
+        | Escape   -> exit_loop ctxt
+        | Right    -> speedY := -5e-1
+        | Left     -> speedY := 5e-1
+        | Up       -> speedX := 5e-1
+        | Down     -> speedX := -5e-1
+        | PageUp   -> speedZ := 5e-1
+        | PageDown -> speedZ := -5e-1
+        | N        -> speedNear := s
+        | F        -> speedFar := s
+        | I        -> do_text := not !do_text
+        | Space    -> stop_pause ()
+        | _        ->
+           Printf.printf "key: %s state: %d x:%d y:%d\n%!"
+             (Key.name key) (state :> int) x y
+      with e -> Printf.printf "exception: %s" (Printexc.to_string e))
 
 let _ = set_button_press_callback ctxt (fun ~button ~state ~x ~y ->
             Printf.printf "button: %s state: %d x:%d y:%d\n%!"

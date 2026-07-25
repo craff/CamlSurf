@@ -260,14 +260,32 @@ surfaces. Each surface or curve will record the current value of these
 properties. Properties currently include.
 
 - `color = (r,g,b[,a])` : color for surfaces (default `(0.75,0.75,0.4,1.0)`)
+
 - `back_color = (r,g,b,[,a])` : color for the backface of surfaces (default `(0.75,0.4,0.4,1.0)`)
+
 - `back_color = none` : use `color` for both faces.
+
 - `line_color = (r,g,b,[,a])` : color for curves (default `(1.0,1.0,1.0,1.0)`)
+
 - `specular = value` : intensity of specular light (default 0.25)
+
 - `shininess = value` : dispersion of specular light (default 50)
-- `precision = value` : control the root finding algorithm. Should be in
-  `]0,1]`. Near 0, the algorithm is more precise but slower. Conversely, near to
-  1 the algorithm is faster but may loose some roots (default 0.1).
+
+- `precision = value`, `precision_derive` : control the root finding
+  algorithm. Should be positive. More precisely, we use a subdivision method
+  on each ray starting from the eye. On an interval $I = [a,b]$, we consider the
+  implicit function $f$ restricted to $I$ and $h$ its Hermite interpolation of
+  degree 3 : $f(a) = h(a)$, $f'(a) = h'(a)$, $f(b) = h(b)$ and $f'(b) = h'(b)$. To
+  accept I without further subdivision (and use dichotomy to localise the
+  roots using the root of $h'$ within $I$), we must have:
+  - $\frac{|f - h|}{|f| + |h|} <$ `precision`
+  - $\frac{|f' - h'| (b - a)}{|f| + |h|} <$ `precision_derive`
+
+  These inequalities are tested in 3 points, among which are the roots of $h'$ which
+  belong to $I$. The other points are small random perturbation of
+  $\frac{1}{2}a+\frac{1}{2}b$, and to replace missing roots:
+  $\frac{3}{4}a+\frac{1}{4}b$ and $\frac{1}{4}a+\frac{3}{4}b$.
+
 - `mindivs = value` minimum number of subdivisions performed when searching for
   roots (default 0).
 

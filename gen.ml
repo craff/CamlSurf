@@ -10,6 +10,7 @@ type env = {
     specular : float;
     shininess : float;
     precision : float;
+    precision_derive : float;
     mindivs : int;
   }
 
@@ -19,7 +20,8 @@ let default_env =
     line_color = [|1.0;1.0;1.0;1.0|];
     specular = 0.25;
     shininess = 50.;
-    precision = 0.5;
+    precision = 0.2;
+    precision_derive = 0.5;
     mindivs = 0;
   }
 
@@ -149,12 +151,13 @@ let dispatcher surfaces =
       | Some c -> c
     in
     Format.fprintf fmt
-      "  surfaces[LASTS] = surface(
-           LASTS, %d, %.12f, vec4(%.12f,%.12f,%.12f,%.12f),
-           vec4(%.12f,%.12f,%.12f,%.12f),
-           %.12f, %.12f); LASTS++;
+      "  surfaces[LASTS] = surface(\n\
+           LASTS, %d, %.12f, %.12f,\n\
+           vec4(%.12f,%.12f,%.12f,%.12f),\n\
+           vec4(%.12f,%.12f,%.12f,%.12f),\n\
+           %.12f, %.12f); LASTS++;\n\
        "
-      env.mindivs env.precision
+      env.mindivs env.precision env.precision_derive
       env.color.(0) env.color.(1) env.color.(2) env.color.(3)
       back_color.(0) back_color.(1) back_color.(2) back_color.(3)
       env.specular env.shininess
@@ -392,6 +395,8 @@ let run (commands:cmds) input_files =
         (fun () -> env := { !env with mindivs })
     ; "precision" "=" (precision::FLOAT) =>
         (fun () -> env := { !env with precision })
+    ; "precision_derive" "=" (precision_derive::FLOAT) =>
+        (fun () -> env := { !env with precision_derive })
     ; "near" "=" (x::FLOAT) =>
         (fun () -> commands.set_near x)
     ; "far" "=" (x::FLOAT) =>
