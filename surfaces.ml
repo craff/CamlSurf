@@ -113,14 +113,17 @@ let add_msg, text_texture, text_size, text_reshape =
     ]
   in
   let messages = ref init_msgs in
-  let texture = ref (Textures.gen_gc_texture ()) in
+  let texture = ref (lazy (Textures.gen_gc_texture ())) in
 
   let w = ref 0.0 and h = ref 0.0 in
   let set_shader () =
-    let tex = text_texture (String.concat "\n" !messages) in
-    w := float tex.width /. float !gwidth;
-    h := float tex.height /. float !gheight;
-    texture := tex.texture
+    let tex = lazy (
+      let tex = text_texture (String.concat "\n" !messages) in
+      w := float tex.width /. float !gwidth;
+      h := float tex.height /. float !gheight;
+      tex.texture)
+    in
+    texture := tex
   in
   let _ = set_shader () in
   (fun msg ->
@@ -242,8 +245,8 @@ let dessine_text () =
             x3.(0)/.x3.(3);x3.(1)/.x3.(3);x3.(2)/.x3.(3);
           |]
       in
-      draw_buffer_elements text_prg
-        gl_triangles ielements (text_texture ()) p ivertices;
+      let lazy tex = text_texture () in
+      draw_buffer_elements text_prg gl_triangles ielements tex p ivertices;
       disable gl_blend;
     end
 

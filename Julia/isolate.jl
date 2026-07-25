@@ -64,12 +64,10 @@ function isolate(fn::DFun, A::Float64, B::Float64;
             x1 = t*a + (1-t)*b
             t = (rand()-0.5)*alea + 0.25
             x2 = t*a + (1-t)*b
-        end
-        if (test1)
+        elseif (test1)
             t = (rand()-0.5)*alea + ((x2 < x3) ? 0.25 : 0.75)
             x1 = t*a + (1-t)*b
-        end
-        if (test2)
+        elseif (test2)
             t = (rand()-0.5)*alea + ((x1 < x3) ? 0.25 : 0.75)
             x2 = t*a + (1-t)*b
         end
