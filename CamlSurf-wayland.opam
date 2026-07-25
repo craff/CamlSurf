@@ -12,9 +12,9 @@ bug-reports: "https://github.com/craff/CamlSurf/issues"
 depends: [
   "dune" {>= "3.23"}
   "ocaml"
-  "gles3"
-  "gles3-wayland"
-  "pacomb"
+  "gles3" {>= "20260725"}
+  "gles3-x11" {>= "20260725"}
+  "pacomb" {>= "1.4.4"}
   "odoc" {with-doc}
 ]
 build: [
