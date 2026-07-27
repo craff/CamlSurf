@@ -39,6 +39,7 @@ jobs:
 
       - run: |
           opam pin add pacomb git+https://github.com/craff/pacomb.git -y
+          opam pin add conf-gles2 git+https://github.com/craff/gles3.git -y
           opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
           opam pin add gles3 git+https://github.com/craff/gles3.git -y
           opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
@@ -92,6 +93,7 @@ jobs:
             opam switch set ocaml5.5
             cd "$GITHUB_WORKSPACE"
             opam pin add pacomb git+https://github.com/craff/pacomb.git -y
+            opam pin add conf-gles2 git+https://github.com/craff/gles3.git -y
             opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
             opam pin add gles3 git+https://github.com/craff/gles3.git -y
             opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
