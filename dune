@@ -57,7 +57,7 @@
 (executable
  (name CamlSurf_x11)
  (public_name CamlSurf_x11)
- (modules CamlSurf_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve vertex_implicit  vertex_text  )
+ (modules CamlSurf_x11 surfaces preambule  fragment_light_implicit  fragment_text  solve vertex_implicit  vertex_text)
  (flags (:standard -w -6))
  (package CamlSurf-x11)
  (libraries gles3 gles3-x11 pacomb formal))
@@ -65,7 +65,7 @@
 (executable
  (name CamlSurf_wayland)
  (public_name CamlSurf_wayland)
- (modules CamlSurf_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve  vertex_implicit  vertex_text  )
+ (modules CamlSurf_wayland surfaces preambule  fragment_light_implicit  fragment_text  solve  vertex_implicit  vertex_text)
  (flags (:standard -w -6))
  (package CamlSurf-wayland)
  (libraries gles3 gles3-wayland pacomb formal))

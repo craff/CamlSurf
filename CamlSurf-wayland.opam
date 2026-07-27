@@ -13,7 +13,7 @@ depends: [
   "dune" {>= "3.23"}
   "ocaml"
   "gles3" {>= "20260725"}
-  "gles3-x11" {>= "20260725"}
+  "gles3-wayland" {>= "20260725"}
   "pacomb" {>= "1.4.4"}
   "odoc" {with-doc}
 ]

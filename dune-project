@@ -32,7 +32,7 @@
  (description "A program to display and animate implicit surfaces and curves")
  (depends ocaml
    (gles3 (>= 20260725))
-   (gles3-x11 (>= 20260725))
+   (gles3-wayland (>= 20260725))
    (pacomb (>= 1.4.4)))
  (tags
   ("surface" "curve" "geometry" "OpenGL")))
