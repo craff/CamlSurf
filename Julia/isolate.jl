@@ -8,6 +8,9 @@ end
 struct DFun{F,G}
     f::F
     df::G
+    A::Float64
+    B::Float64
+    nb_roots::Int
 end
 
 function hermite3_make(fn::DFun, a::Float64, fa, dfa,
@@ -22,7 +25,7 @@ function hermite3_make(fn::DFun, a::Float64, fa, dfa,
     return Hermite3(fa, A, B, C)
 end
 
-function WH(fn::DFun, f3, x::Float64, a::Float64, b::Float64)
+function WH(fn::DFun, f3::Hermite3, x::Float64, a::Float64, b::Float64)
     fx = fn.f(x)
     dfx = fn.df(x)
     u = (x - a)
@@ -151,7 +154,7 @@ using Statistics
 total_tests = 0
 total_errors = 0
 
-function benchmark_isolate(msg,make_poly, ns, a, b, expect)
+function benchmark_isolate(msg, make_poly, ns)
     println(msg)
     global total_tests
     global total_errors
@@ -160,21 +163,25 @@ function benchmark_isolate(msg,make_poly, ns, a, b, expect)
     nbroots = Int[]
 
     f = make_poly(ns[1])
-    isolate(f, a(ns[1]), b(ns[1]))
+    a = f.A
+    b = f.B
+    isolate(f, a, b)
 
     nb_tests = 0
     nb_errors = 0
 
     for n in ns
         f = make_poly(n)
+        a = f.A
+        b = f.B
+        e = f.nb_roots
 
         counts = Int[]
         ts = Float64[]
         r = 0
-        e = expect(n)
         for i in 1:10
             t = @elapsed begin
-                r, nr, count = isolate(f, a(n), b(n))
+                r, nr, count = isolate(f, a, b)
             end
             nb_tests += 1
             if length(r) != e
@@ -195,14 +202,17 @@ function benchmark_isolate(msg,make_poly, ns, a, b, expect)
              xlabel="degree n",
              ylabel="subdivisions",
              marker=:circle,
-             label="subdivisions")
+             label="subdivisions",
+             legend=:topleft)
 
     plot!(twinx(),
           ns, times,
           ylabel="time (ms)",
           marker=:square,
-          label="time")
+          label="time",
+          legend=:bottomright)
 
+    savefig(p, "../article/images/$(msg).png")
     total_tests += nb_tests
     total_errors += nb_errors
     println("errors: ", nb_errors, "/", nb_tests)
@@ -233,8 +243,13 @@ function chebyshev(n)
             return (-1)^(n-1) * n*n
         end
     end
-    return DFun(f,df)
+    return DFun(f,df,-30.0,30.0,n)
 end
+
+function mignotte_bound(n,p)
+    return max(2,2^((2*p+3)/(n-2)))
+end
+
 
 function mignotte(n,p)
     function f(x::Float64)::Float64
@@ -244,7 +259,10 @@ function mignotte(n,p)
     function df(x::Float64)::Float64
         return n*x^(n-1) - 4*2^p*(2^p*x - 1)
     end
-    return DFun(f,df)
+    return DFun(f,df,
+                -mignotte_bound(n,p),
+                mignotte_bound(n,p),
+                (n % 2 == 0) ? 4 : 3)
 end
 
 function wilkinson(n)
@@ -266,7 +284,7 @@ function wilkinson(n)
         return dp
     end
 
-    return DFun(f,df)
+    return DFun(f,df,Float64(-n),Float64(n),n)
 end
 
 function geometric(n)
@@ -292,7 +310,40 @@ function geometric(n)
         dp
     end
 
-    DFun(f,df)
+    DFun(f,df,-30.0,30.0,n)
+end
+
+function random_poly(n; maxlog=2.0)
+    # roots distributed on R\{0}: sign * exp(random log)
+    roots = sign.(rand([-1.0, 1.0], n)) .* exp.(rand(n) .* maxlog)
+
+    # count roots in ]-1,1[
+    inside = count(r -> abs(r) < 1, roots)
+
+    # build polynomial
+    function f(x::Float64)::Float64
+        p = 1.0
+        r = 1.0
+        for k in 1:n
+            p *= x-roots[k]
+            r *= 0.5
+        end
+        p
+    end
+
+    function df(x::Float64)::Float64
+        p = 1.0
+        dp = 0.0
+        r = 1.0
+        for k in 1:n
+            dp = dp*(x-roots[k]) + p
+            p *= x-r
+            r *= 0.5
+        end
+        dp
+    end
+
+    return DFun(f, df, -1.0, 1.0, inside)
 end
 
 function legendre(n)
@@ -342,92 +393,77 @@ function legendre(n)
         return n*(x*pn - pm1)/(x*x-1)
     end
 
-    DFun(f,df)
-end
-
-function almost_double(eps)
-    f(x)=(x^2-1)^2+eps*x
-    df(x)=4*x*(x^2-1)+eps
-    return DFun(f,df)
+    DFun(f,df,-30.0,30.0,n)
 end
 
 p = benchmark_isolate(
     "chebyshev",
     chebyshev,
-    collect(2:1:100),
-    n->-30.0,
-    n-> 30.0,
-    n->n
+    collect(2:1:100)
 )
 
-display(p)
-readline()
+#display(p)
+#readline()
 
 p = benchmark_isolate(
     "legendre",
     legendre,
-    collect(2:1:100),
-    n->-30.0,
-    n-> 30.0,
-    n->n
+    collect(2:1:100)
 )
 
-display(p)
-readline()
+#display(p)
+#readline()
 
 p = benchmark_isolate(
     "geometric",
     geometric,
-    collect(2:1:33),
-    n->-30.0,
-    n-> 30.0,
-    n->n
-)
+    collect(2:1:33))
 
-display(p)
-readline()
-
-
-
-function mignotte_bound(n,p)
-    return max(2,2^((2*p+3)/(n-2)))
-end
+#display(p)
+#readline()
 
 p = benchmark_isolate(
-    "mignote_16: x^n - 2*(2^16 x - 1)^2",
+    "geometric",
+    geometric,
+    collect(2:1:33)
+)
+
+#display(p)
+#readline()
+
+
+p = benchmark_isolate(
+    "mignote_16",
     n->mignotte(n,16),
-    collect(5:1:60),
-    n -> -mignotte_bound(n,16),
-    n -> mignotte_bound(n,16),
-    n -> (n % 2 == 0) ? 4 : 3
+    collect(5:1:60)
 )
 
-display(p)
-readline()
+#display(p)
+#readline()
 
 p = benchmark_isolate(
-    "mignote_32: x^n - 2*(2^32 x - 1)^2",
+    "mignote_32",
     n->mignotte(n,32),
-    collect(5:1:30),
-    n -> -mignotte_bound(n,32),
-    n -> mignotte_bound(n,32),
-    n -> (n % 2 == 0) ? 4 : 3
+    collect(5:1:29)
 )
 
-display(p)
-readline()
+#display(p)
+#readline()
 
 p = benchmark_isolate(
     "wilkinson",
     wilkinson,
     collect(5:1:100),
-    n->float(-n),
-    n->float(n),
-    n->n
 )
 
-display(p)
-readline()
+p = benchmark_isolate(
+    "random",
+    random_poly,
+    collect(3:1:100),
+)
+
+#display(p)
+#readline()
 
 
 println("errors: ", total_errors, "/", total_tests)
