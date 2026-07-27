@@ -52,7 +52,12 @@ jobs:
 
       - run: opam exec -- dune build @install
 
-      - run: opam install CamlSurf-x11 CamlSurf-wayland
+      - run: opam install CamlSurf-x11
+
+      - if: runner.os != 'macOS'
+        run: |
+          opam install CamlSurf-wayland
+
 
   build-container:
     runs-on: ubuntu-latest
