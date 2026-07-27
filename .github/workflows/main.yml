@@ -38,10 +38,6 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - if: runner.os == 'macOS'
-        run: |
-          rm -f CamlSurf-wayland.opam
-
       - run: |
           opam pin add pacomb git+https://github.com/craff/pacomb.git -y
           opam pin add conf-gles2 git+https://github.com/craff/gles3.git -y
@@ -52,16 +48,23 @@ jobs:
             opam pin add gles3-wayland git+https://github.com/craff/gles3.git -y
           fi
 
-      - run: opam install . --deps-only --with-test
+      - run: opam install ./CamlSurf-x11.opam --deps-only --with-test
 
-      - run: opam exec -- dune build @install
+      - if: runner.os != 'macOS'
+        run: |
+          opam install ./CamlSurf-wayland.opam --deps-only --with-test
+
+      - run: opam exec -- dune build @install ./CamlSurf_x11.exe
+
+      - if: runner.os != 'macOS'
+        run: |
+          opam exec -- dune build @install ./CamlSurf_wayland.exe
 
       - run: opam install CamlSurf-x11
 
       - if: runner.os != 'macOS'
         run: |
           opam install CamlSurf-wayland
-
 
   build-container:
     runs-on: ubuntu-latest
