@@ -19,6 +19,7 @@
  (name CamlSurf-x11)
  (synopsis "A program to display and animate implicit surfaces and curves")
  (description "A program to display and animate implicit surfaces and curves")
+ (allow_empty)
  (depends ocaml
    (gles3 (>= 20260725))
    (gles3-x11 (>= 20260725))
@@ -30,6 +31,7 @@
  (name CamlSurf-wayland)
  (synopsis "A program to display and animate implicit surfaces and curves")
  (description "A program to display and animate implicit surfaces and curves")
+ (allow_empty)
  (depends ocaml
    (gles3 (>= 20260725))
    (gles3-wayland (>= 20260725))
