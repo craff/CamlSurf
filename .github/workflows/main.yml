@@ -44,7 +44,9 @@ jobs:
           opam pin add gles3-stubs git+https://github.com/craff/gles3.git -y
           opam pin add gles3 git+https://github.com/craff/gles3.git -y
           opam pin add gles3-x11 git+https://github.com/craff/gles3.git -y
-          opam pin add gles3-wayland git+https://github.com/craff/gles3.git -y
+          if [ "${{ matrix.os }}" != "macos-latest" ]; then
+            opam pin add gles3-wayland git+https://github.com/craff/gles3.git -y
+          fi
 
       - run: opam install ./CamlSurf-x11.opam ./CamlSurf-wayland.opam --deps-only --with-test
 
