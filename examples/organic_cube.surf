@@ -1,0 +1,15 @@
+#let time = 0;
+
+let q(x,y,z) = x^3 - y^2 + x*z;
+let a = 0.917;
+
+let p = x^8 + y^8 + z^8 - 1 +
+  2*((x^2-a)^2*(y^2-a)^2+(y^2-a)^2*(z^2-a)^2+(z^2-a)^2*(x^2-a)^2)*
+      (cos(5*cos(time/7)*q(x,y,z)) +
+       cos(5*cos(time/11)*q(y,z,x)) +
+       cos(5*cos(time/13)*q(z,x,y)));
+
+translateZ -3;
+near = 2;
+far = 7;
+surface organic_cube : p bound x^2+y^2+z^2-5;
