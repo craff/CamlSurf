@@ -87,21 +87,8 @@ function isolate(fn::DFun, A::Float64, B::Float64;
               !(R21 < bound1) || !(R22 < bound2) ||
               !(R31 < bound1) || !(R32 < bound2)
         if (bad && (x3 != a && x3 != b))
-            # if abs(fx1) > abs(fa) && abs(fx1) > abs(fb)
-            #     if abs(fx2) > abs(fx1)
-            #         loop(a,fa,x2,fx2)
-            #         loop(x2,fx2,b,fb)
-            #     else
-            #         loop(a,fa,x1,fx1)
-            #         loop(x1,fx1,b,fb)
-            #     end
-            # elseif abs(fx2) > abs(fa) && abs(fx2) > abs(fb)
-            #     loop(a,fa,x2,fx2)
-            #     loop(x2,fx2,b,fb)
-            # else
-                loop(a,fa,dfa,x3,fx3,dfx3)
-                loop(x3,fx3,dfx3,b,fb,dfb)
-            #end
+             loop(a,fa,dfa,x3,fx3,dfx3)
+             loop(x3,fx3,dfx3,b,fb,dfb)
         else
             count += 1
             if (a < x1 && x1 < b)
@@ -402,8 +389,7 @@ p = benchmark_isolate(
     collect(2:1:100)
 )
 
-#display(p)
-#readline()
+readline()
 
 p = benchmark_isolate(
     "legendre",
@@ -411,16 +397,14 @@ p = benchmark_isolate(
     collect(2:1:100)
 )
 
-#display(p)
-#readline()
+readline()
 
 p = benchmark_isolate(
     "geometric",
     geometric,
     collect(2:1:33))
 
-#display(p)
-#readline()
+readline()
 
 p = benchmark_isolate(
     "geometric",
@@ -428,8 +412,7 @@ p = benchmark_isolate(
     collect(2:1:33)
 )
 
-#display(p)
-#readline()
+readline()
 
 
 p = benchmark_isolate(
@@ -438,8 +421,7 @@ p = benchmark_isolate(
     collect(5:1:60)
 )
 
-#display(p)
-#readline()
+readline()
 
 p = benchmark_isolate(
     "mignote_32",
@@ -447,8 +429,7 @@ p = benchmark_isolate(
     collect(5:1:29)
 )
 
-#display(p)
-#readline()
+readline()
 
 p = benchmark_isolate(
     "wilkinson",
@@ -456,14 +437,14 @@ p = benchmark_isolate(
     collect(5:1:100),
 )
 
+readline()
+
 p = benchmark_isolate(
     "random",
     random_poly,
     collect(3:1:100),
 )
 
-#display(p)
-#readline()
 
 
 println("errors: ", total_errors, "/", total_tests)

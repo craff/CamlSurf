@@ -82,17 +82,13 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	float C = (c*(dfa + dfb) - 2.0*(fb - fa))/(c*c*c);
 	float D = B*B - 3.0*A*C;
 	float t = (rand() - 0.5) * 1e-1 + 0.5;
-	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub, uc, fc, dfc;
-	vec3 xc;
+	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub;
 	if (B > 0.0 && D >= 0.0) {
 	  float tmp = -B - sqrt(D);
 	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
         } else if (D >= 0.0) {
 	  float tmp = -B + sqrt(D);
 	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
-	}
-	if (u2 < u1) {
-	  float tmp = u1; u1 = u2; u2 = tmp;
 	}
 	bool test1 = ua >= u1 || u1 >= ub, test2 = ua >= u2 || u2 >= ub;
 	if (test1 && test2) {
@@ -112,28 +108,23 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	if (u2 < u1) {
 	  float tmp = u1; u1 = u2; u2 = tmp;
 	}
-	if (u3 < u1) {
-	  float tmp = u1; u1 = u3; u3 = u2; u2 = tmp;
-	} else if (u3 < u2) {
-	  float tmp = u2; u2 = u3; u3 = tmp;
-	}
-	float us[5];
-	float fs[5];
-	float dfs[5];
+	float us[4];
+	float fs[4];
+	float dfs[4];
+	float fc; float dfc;
 	bool bad=false;
 	{
-	   x = e + u2 * dir;
+	   x = e + u3 * dir;
 	   float fx = f_df(si,x,dtmp);
 	   float dfx = dot(dtmp,dir);
-	   us[2] = u2; fs[2] = fx; dfs[2] = dfx;
-	   float X = u2 - ua;
+	   fc = fx; dfc = dfx;
+	   float X = u3 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
 	   float df3x = A + (2.0*B + 3.0*C*X)*X;
 	   float R1 =  abs(fx - f3x);
 	   float R2 =  abs(dfx - df3x)*(ub - ua);
 	   float D = abs(fx) + abs(f3x);
 	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
-	   xc = x; fc = fx; dfc = dfx; uc = u2;
 	}
 	if (!bad) {
 	   x = e + u1 * dir;
@@ -149,11 +140,11 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
 	}
 	if (!bad) {
-	   x = e + u3 * dir;
+	   x = e + u2 * dir;
 	   float fx = f_df(si,x,dtmp);
 	   float dfx = dot(dtmp,dir);
-	   us[3] = u3; fs[3] = fx; dfs[3] = dfx;
-	   float X = u3 - ua;
+	   us[2] = u2; fs[2] = fx; dfs[2] = dfx;
+	   float X = u2 - ua;
 	   float f3x = fa + (A + (B + C*X)*X)*X;
 	   float df3x = A + (2.0*B + 3.0*C*X)*X;
 	   float R1 =  abs(fx - f3x);
@@ -161,11 +152,11 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   float D = abs(fx) + abs(f3x);
 	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
 	}
-	if (bad && sp <= SSIZE - 2 && uc != ua && uc != ub) {
+	if (bad && sp <= SSIZE - 2 && u3 != ua && u3 != ub) {
            ustack[sp] = ub;
 	   fstack[sp] = fb;
 	   dfstack[sp++] = dfb;
-	   ustack[sp] = uc;
+	   ustack[sp] = u3;
 	   fstack[sp] = fc;
 	   dfstack[sp++] = dfc;
 	   ub = ua;
@@ -174,7 +165,7 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   continue;
 	}
 	us[0] = ua; fs[0] = fa;
-	us[4] = ub; fs[4] = fb;
+	us[3] = ub; fs[3] = fb;
 	bool brk = false;
 	for (int j = 0; j < 5; j++) {
 	   if (fs[j] * fs[j+1] <= 0.0) {
