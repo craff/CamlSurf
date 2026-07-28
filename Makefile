@@ -6,12 +6,15 @@ all:
 install:
 	dune install
 
+install_doc:
+	cp -r html ~/WWW2/Raffalli/CamlSurf
+
 doc:
-	pandoc -f gfm -t html README.md -s -o html/README.html --css style.css --title-prefix="CamlSurf" --mathml
+	pandoc -f gfm -t html README.md -s -o html/index.html --css style.css --title-prefix="CamlSurf" --mathml
 	sed -i '/<img src="Images\/cone3\.png"/c\
 		<figure><video width="600" controls autoplay loop muted>\
 		<source src="./Images/barth.mp4" type="video/mp4">\
 		Your browser does not support the video tag.\
 		</video><figcaption>\
 		    Animation of the Barth sextic on an integrated GPU.\
-	         </figcaption></figure>' html/README.html
+	         </figcaption></figure>' html/index.html
