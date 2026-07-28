@@ -52,7 +52,7 @@
  (name formal)
  (preprocess (per_module ((pps pacomb.ppx) Algebra Expression Gen)))
  (modules algebra expression gen)
- (libraries pacomb))
+ (libraries pacomb gles3))
 
 (executable
  (name CamlSurf_x11)

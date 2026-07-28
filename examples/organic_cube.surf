@@ -1,4 +1,6 @@
 #let time = 0;
+background = (1,1,1);
+text_color = (0,0,0);
 
 let q(x,y,z) = x^3 - y^2 + x*z;
 let a = 0.917;

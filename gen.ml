@@ -339,6 +339,8 @@ type cmds =
   ; rotateX : float -> unit
   ; rotateY : float -> unit
   ; rotateZ : float -> unit
+  ; background : Gles3.rgba -> unit
+  ; text_color : float array -> unit
   }
 
 let continue_pause = ref false
@@ -401,6 +403,11 @@ let run (commands:cmds) input_files =
         (fun () -> commands.set_near x)
     ; "far" "=" (x::FLOAT) =>
         (fun () -> commands.set_far x)
+    ; "background" "=" (c::color) =>
+        (fun () -> commands.background
+                     { r = c.(0); g = c.(1); b = c.(2); a = c.(3) })
+    ; "text_color" "=" (c::color) =>
+        (fun () -> commands.text_color c)
     ; "translateX" (x::FLOAT) =>
         (fun () -> commands.translateX x)
     ; "translateY" (x::FLOAT) =>

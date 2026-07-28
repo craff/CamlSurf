@@ -10,7 +10,7 @@ displaying implicit surfaces and curves.
 A script is a sequence of declarations and commands. Variables are immutable
 and may denote either scalar values or expressions. The language also supports
 functions and simple animation through the built-in
-variable {!time}.
+variable `time`.
 
 
 One or more script can be provided as argument on the command line:
@@ -19,6 +19,7 @@ One or more script can be provided as argument on the command line:
 ./surface_x11.exe script1.surf script2.surf ...
 ```
 
+Extra commands may be entered on the terminal after the last script is read.
 The usage of the command is:
 
 ```
@@ -31,14 +32,17 @@ surfaces_x11.exe: [options] [<script1>] [<script2>] ...
   --help  Display this list of options
 ```
 
-Remark: currently, CamlSurf support the following backend:
+Remark: currently, CamlSurf support the following backend (Windows and Cocoa (OS X) backend are planned):
 
 - X11
 - Wayland
 
-Windows and Cocoa (OS X) backend are planned
+Installation
+------------
 
-Extra commands may be entered on the terminal after the last script is read.
+If you have `opam` (OCaml's package manager) installed, `opam update && opam
+install CamlSurf` should work. Otherwise you may compile from github source at
+https://github.com/craff/CamlSurf
 
 Basic syntax
 ------------
@@ -59,25 +63,14 @@ surface sphere : r - 1;
 Numeric expressions
 -------------------
 
-The following operators are available.
-
-- `+`
-- `-`
-- `*`
-- `/`
-- `^`
+The following operators are available: `+`, `-`, `*`, `/`, `^`. The latter
+correspond to integer power. Exponent must be a constant integer.
 
 Standard mathematical functions include
 
 - `sqrt`
-- `sin`
-- `cos`
-- `tan`
-- `asin`
-- `acos`
-- `atan`
-- `exp`
-- `log`
+- `sin`, `cos`, `tan`, `asin`, `acos`, `atan`
+- `exp`, `log`
 - `abs`
 - `sgn` (used for the derivative of abs)
 - `positive` (1 if argument is positive, 0 otherwise, mainly used for the
@@ -87,8 +80,7 @@ Standard mathematical functions include
 
 We provide also some binary functions
 
-- `min`
-- `max`
+- `min`, `max`
 
 Example:
 
@@ -107,12 +99,7 @@ let e = exp(1);
 Expressions
 -----------
 
-The variables
-
-- `x`
-- `y`
-- `z`
-
+The variables `x`, `y`, `z`
 represent the coordinates in space when drawing surfaces. Expression may use
 arbitrary variables, but surfaces and curves must only use `x`, `y`, `z` and
 `time` when doing animation.
@@ -145,7 +132,7 @@ not modify the value of the variable. In fact, an undefined name represents a
 variable (a parameter) and become a definition as soon as it is defined.
 
 Redefining a name just hide the previous definition but does not change the
-value of expression using the old definition.
+value inside expression using the old definition (or parameter).
 
 Example (not recommanded)
 ```
@@ -185,9 +172,9 @@ Some operations are provided and may be used used inside expressions:
 - `simplify(p)` to perform basic simplification.
 - `develop(p)` to develop all polynomials within `p`.
 - `derive(p,var)` to derive an expression relative a variable.
-- `p[var1 <- e1, ..., varn <- en]` to perform substitution.
+- `p[var1 <- e1, ..., varn <- en]` to perform substitution of parameter.
 
-A command allows to print expressions:
+A toplevel command allows to print expressions:
 
 - `print e;`
 
@@ -228,7 +215,8 @@ Only the points satisfying bound < 0 are rendered.
 Curves
 ------
 
-A curve is the intersection of two implicit surfaces, but it is draw on a surface.
+A curve is the intersection of two implicit surfaces, but it is drawn on a
+surface (that may be transparent).
 
 Syntax:
 
@@ -257,7 +245,7 @@ Rendering properties
 
 Some properties may be used to control the rendering of curves and
 surfaces. Each surface or curve will record the current value of these
-properties. Properties currently include.
+properties when it is defined. Properties currently include.
 
 - `color = (r,g,b[,a])` : color for surfaces (default `(0.75,0.75,0.4,1.0)`)
 
@@ -271,7 +259,7 @@ properties. Properties currently include.
 
 - `shininess = value` : dispersion of specular light (default 50)
 
-- `precision = value`, `precision_derive` : control the root finding
+- `precision = value`, `precision_derive = value` : control the root finding
   algorithm. Should be positive. More precisely, we use a subdivision method
   on each ray starting from the eye. On an interval $I = [a,b]$, we consider the
   implicit function $f$ restricted to $I$ and $h$ its Hermite interpolation of
@@ -299,13 +287,15 @@ Example to draw a transparent sphere not modifying the current color.
 {
   color = (0.8,0.2,0.2,0.5);
   back_color = none;
-
   surface s : x^2+y^2+z^2-1;
 }
 ```
 
 Some global variables also control the rendering and affect all objects:
 
+- `backgrounr = color` set the background color (alpha channel is ignored)
+- `text_color = color` give the color of the text showing GL configuration and
+  FPS (alpha channel is ignored).
 - `far = value` (only parts of the surface nearer from the camera than the
   provided value will be displayed)
 - `near = value` (only parts of the surface further from the camera than the
@@ -429,19 +419,20 @@ Example: animated Barth sextic
 ------------------------------
 
 ```
-let phi = (1+sqrt(5))/2;
-let t = min(1.1*cos(time/11)+0.1,1)*phi;
-let a = min(1.1*cos(time/13)+0.1,1)*(1+2*phi);
+# barth sextic with variable parameter
+background = (1,1,1);
+text_color = (0,0,0);
+
+let phi = (1+sqrt(5)) / 2 ;
+let t = min(1.1*cos((time-8)/11) + 0.1, 1) * phi ;
+let a = min(1.1*cos((time-8)/13) + 0.1, 1) * (1+2*phi);
 
 let p =
-    4*(t^2*x^2-y^2)
-     *(t^2*y^2-z^2)
-     *(t^2*z^2-x^2)
-    -a*(x^2+y^2+z^2-1)^2;
+  4 * (t^2*x^2-y^2)*(t^2*y^2-z^2)*(t^2*z^2-x^2)
+  - a*(x^2+y^2+z^2-1)^2 ;
 
-surface barth :
-    p
-    bound x^2+y^2+z^2-5;
+translateZ -1;
+surface barth : p bound x^2+y^2+z^2-5;
 ```
 
-This example illustrates the use of {!time} to continuously deform a surface.
+This example illustrates the use of `time` to continuously deform a surface.

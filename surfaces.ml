@@ -63,9 +63,15 @@ let eyePos = [|0.;0.;-3.0|]
 let eyeUp = [|0.0;1.0;0.0|]
 let near = ref 5.0
 let far = ref 10.0
+let background_color = ref { r = 0.0; g = 0.0; b = 0.0; a = 0.0 }
+let text_color = ref [|1.0; 1.0; 1.0; 1.0|]
 
 let ielements = to_uint_element_buffer gl_static_draw
                     [|0;1;2;   2;1;3; |]
+
+let set_textcolor a =
+  text_color := a
+
 
 (** the projection matrix: beware, it depends from the screen ratio *)
 let projection () =
@@ -87,6 +93,7 @@ let text_prg =
   in
   let prg = compile ~debug text_shader in
   let prg = float_attr prg "in_position"  in
+  let prg = float3v_uniform prg "text_color" in
   let prg = float_mat4_uniform prg "Projection" in
   let tex_coordinates =
     to_float_array_buffer gl_static_draw
@@ -246,7 +253,8 @@ let dessine_text () =
           |]
       in
       let lazy tex = text_texture () in
-      draw_buffer_elements text_prg gl_triangles ielements tex p ivertices;
+      draw_buffer_elements text_prg gl_triangles ielements tex p
+        !text_color ivertices;
       disable gl_blend;
     end
 
@@ -276,9 +284,11 @@ let dessine_implicit t =
 let _ =
   disable gl_depth_test;
   blend_equation gl_func_add;
-  blend_func ~dst:gl_src_alpha
-    ~src:gl_dst_alpha;
-  clear_color { r = 0.0; g = 0.0; b = 0.1; a = 1.0 }
+  blend_func ~src:gl_src_alpha
+    ~dst:gl_one_minus_src_alpha
+
+let set_background c =
+  background_color := c
 
 (** two references to compute the frame rates *)
 let firsttime = Unix.gettimeofday ()
@@ -312,6 +322,7 @@ let draw () =
     far := max (!far +. !speedFar *. delta) !near;
   if !speedNear <> 0.0 then
     near := min (max (!near +. !speedNear *. delta) 0.1) !far;
+  clear_color !background_color;
   clear [ gl_color_buffer ];
   viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight;
   if !surfaces <> [] then dessine_implicit (t -. firsttime);
@@ -398,6 +409,8 @@ let commands =
   ; set_far = (fun x -> far := x)
   ; translateX; translateY; translateZ
   ; rotateX; rotateY; rotateZ
+  ; background = set_background
+  ; text_color = set_textcolor
   }
 
 let _d = Domain.spawn (fun () -> run commands input_files; Egl.exit_loop ctxt)
