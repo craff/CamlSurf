@@ -38,10 +38,40 @@ function WH(fn::DFun, f3::Hermite3, x::Float64, a::Float64, b::Float64)
     return R1, R2, fx, dfx
 end
 
+function dicho(fn::DFun, a::Float64, fa::Float64, b::Float64, fb::Float64)
+    c = a
+    while true
+        c = (a+b)/2
+        if (a == c || b == c)
+            break
+        end
+        fc = fn.f(c)
+        if (fc == 0.0)
+            break
+        end
+        if (fa * fc < 0)
+            b = c; fb = fc
+        else
+            a = c; fa = fc
+        end
+    end
+    return c
+end
+
+default_refine = false
+
 function isolate(fn::DFun, A::Float64, B::Float64;
-                 bound1 = .33, bound2 = 2., alea=1e-2)
-    roots = Tuple{Float64,Float64}[]
+                 bound1 = .33, bound2 = 2., alea=1e-2, refine=default_refine)
+    roots = Union{Float64,Tuple{Float64,Float64}}[]
     count = 0
+    function push_or_refine!(a,fa,b,fb)
+        if (refine)
+            push!(roots, dicho(fn,a,fa,b,fb))
+        else
+            push!(roots,(a,b))
+        end
+    end
+
     function loop(a::Float64, fa::Float64, dfa,
                   b::Float64, fb::Float64, dfb)
         #println("loop:", a, " ", fa," ", b," ", fb)
@@ -93,39 +123,36 @@ function isolate(fn::DFun, A::Float64, B::Float64;
             count += 1
             if (a < x1 && x1 < b)
                 if (fa*fx1 < 0)
-                    push!(roots, (a,x1))
-                end
-                if (fx1 == 0.0)
-                    push!(roots, (x1,x1))
+                    push_or_refine!(a,fa,x1,fx1)
+                elseif (fx1 == 0.0)
+                    push!(roots, x1)
                 end
                 if (a < x2 && x2 < b)
                     if (fx1*fx2 < 0)
-                        push!(roots, (x1,x2))
-                    end
-                    if (fx2 == 0.0)
-                        push!(roots, (x2,x2))
+                        push_or_refine!(x1,fx1,x2,fx2)
+                    elseif (fx2 == 0.0)
+                        push!(roots, x2)
                     end
                     if (fx2*fb < 0)
-                        push!(roots, (x2,b))
+                        push_or_refine!(x2,fx2,b,fb)
                     end
                 elseif (fx1 * fb < 0)
-                    push!(roots, (x1,b))
+                    push_or_refine!(x1,fx1,b,fb)
                 end
             elseif (a < x2 && x2 < b)
                 if (fa*fx2 < 0)
-                    push!(roots, (a,x2))
-                end
-                if (fx2 == 0.0)
-                    push!(roots, (x2,x2))
+                    push_or_refine!(a,fa,x2,fx2)
+                elseif (fx2 == 0.0)
+                    push!(roots, x2)
                 end
                 if (fx2*fb < 0)
-                    push!(roots, (x2,b))
+                    push_or_refine!(x2,fx2,b,fb)
                 end
             elseif (fa * fb < 0)
-                push!(roots, (a,b))
+                push_or_refine!(a,fa,b,fb)
             end
             if (fb == 0.0)
-                push!(roots, (b,b))
+                push!(roots, b)
             end
         end
     end
@@ -141,12 +168,13 @@ using Statistics
 total_tests = 0
 total_errors = 0
 
-function benchmark_isolate(msg, make_poly, ns)
+function benchmark_isolate(msg, make_poly, ns; bound1=.33, bound2=2.)
     println(msg)
     global total_tests
     global total_errors
     leaves = Float64[]
     times = Float64[]
+    times_refine = Float64[]
     nbroots = Int[]
 
     f = make_poly(ns[1])
@@ -165,24 +193,35 @@ function benchmark_isolate(msg, make_poly, ns)
 
         counts = Int[]
         ts = Float64[]
+        tsr = Float64[]
         r = 0
         for i in 1:10
             t = @elapsed begin
-                r, nr, count = isolate(f, a, b)
+                r, nr, count = isolate(f, a, b; bound1, bound2)
+            end
+            nb_tests += 1
+            if length(r) != e
+                nb_errors += 1
+            end
+            tr = @elapsed begin
+                r, nr, count = isolate(f, a, b; refine=true, bound1, bound2)
             end
             nb_tests += 1
             if length(r) != e
                 nb_errors += 1
             end
             push!(ts,t)
+            push!(tsr,tr)
             push!(counts,count)
         end
         t = median(ts)
+        tr = median(tsr)
         count = median(counts)
         push!(leaves, count)
         push!(times, t*1000.0)
+        push!(times_refine, tr*1000.0)
         rs = length(r)
-        println("n=$n  roots=$rs leaves=$count  time=$t")
+        println("n=$n  roots=$rs leaves=$count  time=$t, time_refine=$tr")
     end
 
     p = plot(ns, leaves,
@@ -193,11 +232,13 @@ function benchmark_isolate(msg, make_poly, ns)
              legend=:topleft)
 
     plot!(twinx(),
-          ns, times,
+          ns, [times, times_refine],
           ylabel="time (ms)",
           marker=:square,
-          label="time",
+          color=[:blue :red],
+          label=["time" "time refine"],
           legend=:bottomright)
+
 
     savefig(p, "../article/images/$(msg).png")
     total_tests += nb_tests
@@ -434,7 +475,7 @@ readline()
 p = benchmark_isolate(
     "wilkinson",
     wilkinson,
-    collect(5:1:100),
+    collect(5:1:100); bound1=0.33, bound2=2.
 )
 
 readline()
