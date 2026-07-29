@@ -2,7 +2,7 @@ uniform float time;
 uniform mat3 NormalMatrix;
 uniform mat4 Projection,ModelView,InvModelView;
 uniform float screen_size;
-uniform vec3 eyePos,lightPos;
+uniform vec3 eyePos,lightPos,backgroundColor;
 uniform vec4 lightDiffuse,lightAmbient;
 uniform float far;
 uniform float near;

@@ -10,7 +10,7 @@ void main()
   int nb = 1;
   nb = solve(ieyePos,ipos,4,res,surfs);
   vec4 gPos;
-  vec3 fcolor = vec3(0.0);
+  vec3 fcolor = backgroundColor;
   for (int i=nb-1;i>=0;i--) {
     int sid = surfs[i];
     surface surf = surfaces[sid];

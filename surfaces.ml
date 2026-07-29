@@ -194,6 +194,7 @@ let mk_prog surfaces =
     let iprg = float4v_cst_uniform iprg "lightDiffuse" [|0.5;0.5;0.5;1.0|] in
     let iprg = float4v_cst_uniform iprg "lightAmbient" [|0.2;0.2;0.2;1.0|] in
     let iprg = float3v_cst_uniform iprg "eyePos" eyePos in
+    let iprg = float3v_uniform iprg "backgroundColor" in
     iprg
   in lazy (fn ())
 
@@ -276,8 +277,11 @@ let dessine_implicit t =
         x3.(0)/.x3.(3);x3.(1)/.x3.(3);x3.(2)/.x3.(3);
       |]
   in
+  let back = [| !background_color.r
+              ; !background_color.g
+              ; !background_color.b |] in
   draw_buffer_elements (Lazy.force !main_prg)
-    gl_triangles ielements
+    gl_triangles ielements back
     (float (min !gwidth !gheight)) !near !far t p m im n ivertices
 
 (** some last initializations of openGL state *)
