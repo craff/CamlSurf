@@ -15,4 +15,17 @@ let p = 1 - x^8 - y^8 - z^8 -
 translateZ -3;
 near = 2;
 far = 7;
-surface organic_cube : p bound x^2+y^2+z^2-5;
+{
+  precision = 0.1;
+  precision_derive = 0.1;
+  surface organic_cube : p bound x^2+y^2+z^2-5;
+}
+let f = 20/acos(-1);
+line_color = (1,1,0);
+curve X : sin(f*x) on organic_cube;
+curve Y : sin(f*y) on organic_cube;
+curve Z : sin(f*z) on organic_cube;
+
+color = (0.3,0.3,0.9,0.35);
+back_color = none;
+surface sphere : x^2+y^2+z^2 - 1/25;
