@@ -16,5 +16,5 @@ doc:
 		<source src="./Images/barth.mp4" type="video/mp4">\
 		Your browser does not support the video tag.\
 		</video><figcaption>\
-		    Animation of the Barth sextic on an integrated GPU.\
+		    Animation of Barth sextic on an integrated GPU.\
 	         </figcaption></figure>' html/index.html

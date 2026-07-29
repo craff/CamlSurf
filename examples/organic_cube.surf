@@ -1,11 +1,12 @@
 #let time = 0;
 background = (1,1,1);
 text_color = (0,0,0);
-
+color = (0.3,0.3,0.9,1.);
+back_color = none;
 let q(x,y,z) = x^3 - y^2 + x*z;
 let a = 0.917;
 
-let p = x^8 + y^8 + z^8 - 1 +
+let p = 1 - x^8 - y^8 - z^8 -
   2*((x^2-a)^2*(y^2-a)^2+(y^2-a)^2*(z^2-a)^2+(z^2-a)^2*(x^2-a)^2)*
       (cos(5*cos(time/7)*q(x,y,z)) +
        cos(5*cos(time/11)*q(y,z,x)) +

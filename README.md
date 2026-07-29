@@ -293,7 +293,7 @@ Example to draw a transparent sphere not modifying the current color.
 
 Some global variables also control the rendering and affect all objects:
 
-- `backgrounr = color` set the background color (alpha channel is ignored)
+- `background = color` set the background color (alpha channel is ignored)
 - `text_color = color` give the color of the text showing GL configuration and
   FPS (alpha channel is ignored).
 - `far = value` (only parts of the surface nearer from the camera than the
