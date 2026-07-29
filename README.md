@@ -255,6 +255,8 @@ properties when it is defined. Properties currently include.
 
 - `line_color = (r,g,b,[,a])` : color for curves (default `(1.0,1.0,1.0,1.0)`)
 
+- `line_width = value` : width for curves (default `1.5`, since version 1.1)
+
 - `specular = value` : intensity of specular light (default 0.25)
 
 - `shininess = value` : dispersion of specular light (default 50)

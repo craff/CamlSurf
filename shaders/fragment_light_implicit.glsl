@@ -32,9 +32,9 @@ void main()
     } else {
       mcolor = surf.back_color;
     }
-    if (color_factor < 3.0) {
-      mcolor = (1.0 - color_factor/3.0) * line_color
-      	       + (color_factor/3.0) * mcolor;
+    if (color_factor < 1.0) {
+      mcolor = (1.0 - color_factor) * line_color
+      	       + color_factor * mcolor;
     }
     col = lightAmbient * mcolor;
     NdotL = dot(n,lightDir);
@@ -46,9 +46,9 @@ void main()
         col += surf.specular * pow(NdotHV, surf.shininess);
       }
     } else {
-      if (color_factor < 3.0) {
-        mcolor = (1.0 - color_factor/3.0) * line_color
-       	       + (color_factor/3.0) * mcolor;
+      if (color_factor < 1.0) {
+        mcolor = (1.0 - color_factor) * line_color
+       	       + color_factor * mcolor;
       }
       col -= lightDiffuse * mcolor * NdotL;
       if (i == 0) {

@@ -7,6 +7,7 @@ type env = {
     color : float Array.t;
     back_color : float Array.t option;
     line_color : float Array.t;
+    line_width : float;
     specular : float;
     shininess : float;
     precision : float;
@@ -18,6 +19,7 @@ let default_env =
   { color = [|0.75;0.75;0.4;1.0|];
     back_color = Some [|0.75;0.4;0.4;1.0|];
     line_color = [|1.0;1.0;1.0;1.0|];
+    line_width = 1.5;
     specular = 0.25;
     shininess = 50.;
     precision = 0.2;
@@ -81,13 +83,15 @@ let glsl name nature ?(bound=Cst (-1.0)) e =
          List.fold_left (fun color ({ name = idc; env; _ }:curve) ->
              Format.asprintf
                "%s\n\
-                {vec3 nrm = cross(df_%s_%s(p), dfv);
-                vec4 tnrm = Projection * ModelView * vec4(nrm,0);
-                float pxs = 1.0/screen_size * distance(vec4(0.0), tnrm);
+                {vec3 nrm = cross(df_%s_%s(p), dfv);\n\
+                vec3 tnrm = NormalMatrix * nrm;\n\
+                vec4 m_pos = ModelView * vec4(p,1.0);\n\
+                float pxs = %.12f * (distance(eyePos,m_pos.xyz))/screen_size\n\
+                            * distance(vec3(0.0), tnrm);\n\
                 float vx = abs(f_%s_%s(p) / pxs);\n\
-                if (vx < vb) { vb = vx; color = vec4(%.12f,%.12f,%.12f,%.12f); }
+                if (vx < vb) { vb = vx; color = vec4(%.12f,%.12f,%.12f,%.12f); }\n\
                 }\n\
-                " color name idc name idc
+                " color name idc env.line_width name idc
                   env.line_color.(0) env.line_color.(1)
                   env.line_color.(2) env.line_color.(3)) "" cs
        in
@@ -389,6 +393,8 @@ let run (commands:cmds) input_files =
         (fun () -> env := { !env with back_color = None })
     ; "line_color" "=" (line_color::color) =>
         (fun () -> env := { !env with line_color })
+    ; "line_width" "=" (line_width::FLOAT) =>
+        (fun () -> env := { !env with line_width })
     ; "specular" "=" (specular::FLOAT) =>
         (fun () -> env := { !env with specular })
     ; "shininess" "=" (shininess::FLOAT) =>
