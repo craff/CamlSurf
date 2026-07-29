@@ -234,7 +234,7 @@ let add_curve env id idc e =
 
 let do_text = ref true
 
-let dessine_text () =
+let dessine_text tex =
   if !do_text then
     begin
       enable gl_blend;
@@ -253,7 +253,6 @@ let dessine_text () =
             x3.(0)/.x3.(3);x3.(1)/.x3.(3);x3.(2)/.x3.(3);
           |]
       in
-      let lazy tex = text_texture () in
       draw_buffer_elements text_prg gl_triangles ielements tex p
         !text_color ivertices;
       disable gl_blend;
@@ -326,11 +325,12 @@ let draw () =
     far := max (!far +. !speedFar *. delta) !near;
   if !speedNear <> 0.0 then
     near := min (max (!near +. !speedNear *. delta) 0.1) !far;
+  let lazy tex = text_texture () in
   clear_color !background_color;
   clear [ gl_color_buffer ];
   viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight;
   if !surfaces <> [] then dessine_implicit (t -. firsttime);
-  dessine_text ();
+  dessine_text tex;
   swap_buffers ctxt;
   show_errors "after draw";
 
