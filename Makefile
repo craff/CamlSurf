@@ -7,7 +7,7 @@ install:
 	dune install
 
 install_doc:
-	cp -r html ~/WWW2/Raffalli/CamlSurf
+	rsync -avz --delete html/ ~/WWW2/Raffalli/CamlSurf/
 
 doc:
 	pandoc -f gfm -t html README.md -s -o html/index.html --css style.css --title-prefix="CamlSurf" --mathml
