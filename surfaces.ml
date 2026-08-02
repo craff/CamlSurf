@@ -353,7 +353,7 @@ let _ =
       | Escape            -> exit_loop ctxt
       | Right  | Left     -> speedY := 0.0
       | Up     | Down     -> speedX := 0.0
-      | PageUp | PageDown -> speedZ := 0.0
+      | Prior  | Next     -> speedZ := 0.0
       | N                 -> speedNear := 0.0
       | F                 -> speedFar := 0.0
       | _                 -> ())
@@ -365,7 +365,7 @@ let _ =
       try
         let open Key in
         let s =
-          if (state :> int) land (Modifier.shift :> int) != 0 then
+          if (state :> int) land (Modifier.control :> int) != 0 then
             -1.0
           else
             1.0
@@ -376,12 +376,19 @@ let _ =
         | Left     -> speedY := 5e-1
         | Up       -> speedX := 5e-1
         | Down     -> speedX := -5e-1
-        | PageUp   -> speedZ := 5e-1
-        | PageDown -> speedZ := -5e-1
+        | Prior    -> speedZ := 5e-1
+        | Next     -> speedZ := -5e-1
         | N        -> speedNear := s
         | F        -> speedFar := s
         | I        -> do_text := not !do_text
         | Space    -> stop_pause ()
+        | Num0 | Keypad0 -> time_factor := 0.
+        | Num1 | Keypad1 -> time_factor := 1.
+        | Num2 | Keypad2 -> time_factor := 2. ** s
+        | Num3 | Keypad3 -> time_factor := 4. ** s
+        | Num4 | Keypad4 -> time_factor := 8. ** s
+        | Num5 | Keypad5 -> time_factor := 16. ** s
+        | Num6 | Keypad6 -> time_factor := 32. ** s
         | _        ->
            Printf.printf "key: %s state: %d x:%d y:%d\n%!"
              (Key.name key) (state :> int) x y
