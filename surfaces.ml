@@ -294,9 +294,10 @@ let set_background c =
   background_color := c
 
 (** two references to compute the frame rates *)
-let firsttime = Unix.gettimeofday ()
-let lastfpstime = ref firsttime
-let lasttime = ref firsttime
+let currenttime = ref 0.0
+let lasttime = ref (Unix.gettimeofday ())
+let lastfpstime = ref !lasttime
+let time_factor = ref 1.0
 let frames = ref 0
 let speedX = ref 0.0
 let speedY = ref 0.0
@@ -329,7 +330,8 @@ let draw () =
   clear_color !background_color;
   clear [ gl_color_buffer ];
   viewport ~x:0 ~y:0 ~w:!gwidth ~h:!gheight;
-  if !surfaces <> [] then dessine_implicit (t -. firsttime);
+  currenttime := !currenttime +. !time_factor *. delta;
+  if !surfaces <> [] then dessine_implicit !currenttime;
   dessine_text tex;
   swap_buffers ctxt;
   show_errors "after draw";
