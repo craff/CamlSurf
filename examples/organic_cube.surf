@@ -8,16 +8,16 @@ let a = 0.917;
 
 let p = 1 - x^8 - y^8 - z^8 -
   2*((x^2-a)^2*(y^2-a)^2+(y^2-a)^2*(z^2-a)^2+(z^2-a)^2*(x^2-a)^2)*
-      (cos(5*cos(time/7)*q(x,y,z)) +
-       cos(5*cos(time/11)*q(y,z,x)) +
-       cos(5*cos(time/13)*q(z,x,y)));
+      (cos(5*cos(time/sqrt(11))*q(x,y,z)) +
+       cos(5*cos(time/sqrt(13))*q(y,z,x)) +
+       cos(5*cos(time/sqrt(17))*q(z,x,y)));
 
 translateZ -3;
 near = 2;
 far = 7;
 {
-  precision = 0.1;
-  precision_derive = 0.1;
+#  precision = 0.1;
+#  precision_derive = 0.1;
   surface organic_cube : p bound x^2+y^2+z^2-5;
 }
 let f = 20/acos(-1);
@@ -28,4 +28,4 @@ curve Z : sin(f*z) on organic_cube;
 
 color = (0.3,0.3,0.9,0.35);
 back_color = none;
-surface sphere : x^2+y^2+z^2 - 1/25;
+surface sphere : x^4+y^4+z^4 - 1/625;
