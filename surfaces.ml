@@ -354,8 +354,8 @@ let _ =
       | Right  | Left     -> speedY := 0.0
       | Up     | Down     -> speedX := 0.0
       | Prior  | Next     -> speedZ := 0.0
-      | N                 -> speedNear := 0.0
-      | F                 -> speedFar := 0.0
+      | Char ("n"|"N")    -> speedNear := 0.0
+      | Char ("f"|"F")    -> speedFar := 0.0
       | _                 -> ())
 
 (** call back for key and mouse, just for testing *)
@@ -378,17 +378,14 @@ let _ =
         | Down     -> speedX := -5e-1
         | Prior    -> speedZ := 5e-1
         | Next     -> speedZ := -5e-1
-        | N        -> speedNear := s
-        | F        -> speedFar := s
-        | I        -> do_text := not !do_text
-        | Space    -> stop_pause ()
-        | Num0 | Keypad0 -> time_factor := 0.
-        | Num1 | Keypad1 -> time_factor := 1.
-        | Num2 | Keypad2 -> time_factor := 2. ** s
-        | Num3 | Keypad3 -> time_factor := 4. ** s
-        | Num4 | Keypad4 -> time_factor := 8. ** s
-        | Num5 | Keypad5 -> time_factor := 16. ** s
-        | Num6 | Keypad6 -> time_factor := 32. ** s
+        | Char ("n"|"N") -> speedNear := s
+        | Char ("f"|"F") -> speedFar := s
+        | Char ("I"|"i") -> do_text := not !do_text
+        | Char " " -> stop_pause ()
+        | Char "0" ->
+           time_factor := 0.
+        | Char c when "1" <= c && c <= "9" ->
+           time_factor := 2. ** (s *. float (Char.code c.[0] - Char.code '1'))
         | _        ->
            Printf.printf "key: %s state: %d x:%d y:%d\n%!"
              (Key.name key) (state :> int) x y
