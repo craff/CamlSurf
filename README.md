@@ -306,7 +306,19 @@ Some global variables also control the rendering and affect all objects:
   view
 - `rotateX value`, `rotateY value`, `rotateZ value` rotate the
   view around `(0,0,0)`, always applied before the translation.
+- `time = value` set the value of the `time` variable.
+- `time_factor = value` set the value of the time factor variable (0 means
+  the time does not change). The `time` variable is updated by multiplying the
+  elapsed time by the time factor value.
 
+Example to start an animation after 5 second with a constant time value at the
+beginning:
+```
+time_factor = 0;
+time = 0;
+sleep 5;
+time_factor = 1;
+```
 
 Animation
 ---------

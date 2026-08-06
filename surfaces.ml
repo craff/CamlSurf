@@ -421,6 +421,8 @@ let commands =
   ; rotateX; rotateY; rotateZ
   ; background = set_background
   ; text_color = set_textcolor
+  ; set_time = (fun x -> currenttime := x)
+  ; set_time_factor = (fun x -> time_factor := x)
   }
 
 let _d = Domain.spawn (fun () -> run commands input_files; Egl.exit_loop ctxt)

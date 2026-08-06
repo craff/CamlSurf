@@ -266,7 +266,16 @@ the camera than the provided value will be</li>
 <li><code>rotateX value</code>, <code>rotateY value</code>,
 <code>rotateZ value</code> rotate the view around <code>(0,0,0)</code>,
 always applied before the translation.</li>
+<li><code>time = value</code> set the value of the <code>time</code>
+variable.</li>
+<li><code>time_factor = value</code> set the value of the time factor
+variable (0 means the time does not change). The <code>time</code>
+variable is updated by multiplying the elapsed time by the time factor
+value.</li>
 </ul>
+<p>Example to start with a constant time value:</p>
+<pre><code>time_factor = 0;
+time = 0;</code></pre>
 <h2 id="animation">Animation</h2>
 <p>The predefined variable <code>time</code> contains the elapsed time
 in seconds.</p>

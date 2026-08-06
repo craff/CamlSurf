@@ -345,6 +345,8 @@ type cmds =
   ; rotateZ : float -> unit
   ; background : Gles3.rgba -> unit
   ; text_color : float array -> unit
+  ; set_time : float -> unit
+  ; set_time_factor : float -> unit
   }
 
 let continue_pause = ref false
@@ -426,6 +428,10 @@ let run (commands:cmds) input_files =
         (fun () -> commands.rotateY x)
     ; "rotateZ" (x::FLOAT) =>
         (fun () -> commands.rotateZ x)
+    ; "time" "=" (x::FLOAT) =>
+        (fun () -> commands.set_time x)
+    ; "time_factor" "=" (x::FLOAT) =>
+        (fun () -> commands.set_time_factor x)
 
   and cmds = () => ()
     ; cmds (f :: Pacomb.Grammar.test_after semi cmd => f ()) ';' => ()

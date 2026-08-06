@@ -28,6 +28,20 @@ float rand()
     return float(rand_uint()) * (1.0 / 4294967296.0);
 }
 
+float sgn(float x)
+{
+    return (x > 0.0) ? 1.0 : -1.0;
+}
+float positive(float x)
+{
+    return (x > 0.0) ? 1.0 : 0.0;
+}
+float negative(float x)
+{
+    return (x < 0.0) ? 1.0 : 0.0;
+}
+
+
 struct surface {
   int id;
   int mindivs;
