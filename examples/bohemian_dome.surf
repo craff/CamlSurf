@@ -1,0 +1,7 @@
+translateZ -4;
+near = 2;
+
+let a = cos(time/10);
+let b = sin(time/10);
+
+surface s : - (x^2+y^2+z^2-a^2-b^2)^2 + 4*(x^2 - a^2)*(z^2 - b^2);

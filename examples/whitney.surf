@@ -1,0 +1,2 @@
+
+surface s : - x^2*y - z^2 bound x^2+y^2+z^2 - 16;

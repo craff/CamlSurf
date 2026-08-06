@@ -1,0 +1,11 @@
+translateZ -4;
+near = 2;
+
+# cubic root
+let cr(t) = exp(log(t)/3);
+
+# default precision is not enough
+precision = 0.1;
+precision_derive = 0.1;
+
+surface s : cr(x^2) + cr(y^2) + cr(z^2) - 1.3;

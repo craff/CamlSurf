@@ -1,0 +1,16 @@
+let a = (1 + cos(time/sqrt(11))) / 6;
+let b = (5 + cos(time/sqrt(13))) / 6;
+let c = (3 + cos(time/sqrt(17))) / 6;
+# 0 < a < c < b => 4 nodes
+
+let r = x^2 + y^2 + z^2;
+
+translateZ -4;
+near = 2;
+surface s : a^2 * x^2 * (r^2 - b^2) * (r^2 - c^2) +
+            b^2 * y^2 * (r^2 - c^2) * (r^2 - a^2) +
+            c^2 * z^2 * (r^2 - a^2) * (r^2 - b^2)  bound -z-0.2;
+
+curve c1 : cos(x*25) on s;
+curve c2 : cos(y*25) on s;
+curve c3 : cos(z*25) on s;

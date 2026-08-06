@@ -1,0 +1,6 @@
+translateZ 15;
+translateY -6;
+rotateX -0.3;
+far = 100;
+near= 10;
+surface s : sin(x) + sin(z) - y;

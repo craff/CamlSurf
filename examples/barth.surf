@@ -3,12 +3,18 @@ background = (1,1,1);
 text_color = (0,0,0);
 
 let phi = (1+sqrt(5)) / 2 ;
-let t = min(1.1*cos((time-8)/11) + 0.1, 1) * phi ;
-let a = min(1.1*cos((time-8)/13) + 0.1, 1) * (1+2*phi);
+let t = cos(time/11) * phi ;
+let a = cos(time/13) * (1+2*phi);
 
 let p =
   4 * (t^2*x^2-y^2)*(t^2*y^2-z^2)*(t^2*z^2-x^2)
   - a*(x^2+y^2+z^2-1)^2 ;
 
 translateZ -1;
+time_factor = 0;
+time = 0;
+
 surface barth : p bound x^2+y^2+z^2-5;
+
+sleep 15;
+time_factor = 1;
