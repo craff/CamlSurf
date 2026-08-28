@@ -10,18 +10,14 @@ surface cayley : p bound x^2+y^2+z^2-5;
 # the nine lines on the surface
 # Les côtés du tétraèdre en bleu
 line_color = (0.2,0.2,1.0);
-curve l1 : x^2 + y^2 on cayley;
-curve l2 : y^2 + z^2 on cayley;
-curve l3 : z^2 + x^2 on cayley;
-curve l4 : (x+y-1)^2 + z^2 on cayley;
-curve l5 : (y+z-1)^2 + x^2 on cayley;
-curve l6 : (z+x-1)^2 + y^2 on cayley;
+curve l1 : x on cayley;
+curve l2 : y on cayley;
+curve l3 : z on cayley;
+curve l456 : x+y+z-1 on cayley;
 
 # Les 3 autres droites en vert
 line_color = (0.2,1,0.2);
-curve l7 : (x+y)^2 + ((1-k)*z - 1)^2 on cayley;
-curve l8 : (y+z)^2 + ((1-k)*x - 1)^2 on cayley;
-curve l9 : (z+x)^2 + ((1-k)*y - 1)^2 on cayley;
+curve l789 : x+y+z-1/(1-k) on cayley;
 
 time_factor = 0;
 time = 0;

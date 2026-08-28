@@ -45,6 +45,7 @@ float negative(float x)
 struct surface {
   int id;
   int mindivs;
+  int degree;
   float prec1;
   float prec2;
   vec4 color;

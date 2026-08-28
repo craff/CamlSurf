@@ -107,6 +107,7 @@ sig
   val write_bin : out_channel -> elem -> unit
   val read_bin : in_channel -> elem
 
+  val degree : elem -> string list -> elem
   val simplify : elem -> elem
   val develop : elem -> elem
   val normalize : elem -> elem
@@ -704,6 +705,24 @@ struct
       in Hashtbl.add tbl e r ;
       r
     in fn expr
+
+  let degree expr vars =
+    let rec fn e =
+      match e with
+      | Var name ->
+         if List.mem name vars then 1 else 0
+      | Cst _ -> 0
+      | Add (e,e') | Sub(e,e') -> max (fn e) (fn e')
+      | Mul (e,e') -> fn e + fn e'
+      | Div (e,e') ->
+         if fn e' = 0 then fn e else raise Not_found
+      | Pow (e, deg) -> fn e * deg
+      | Tra(_, e) ->
+         if fn e = 0 then 0 else raise Not_found
+      | Tra2(_,e,e') ->
+         if fn e = 0 && fn e' = 0 then 0 else raise Not_found
+    in
+    try Some (fn expr) with Not_found -> None
 
 (* substitution "name" var in "exp1" with "exp2"
    substitution d'une variable "name" par une expression "exp2"

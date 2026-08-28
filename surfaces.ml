@@ -151,8 +151,9 @@ let mk_prog surfaces =
   let fn () =
     let glsl_surfaces =
       List.map (fun s ->
-          let str = glsl s.name (Surface s.curves) ?bound:s.bound s.expr in
-          of_string gl_fragment_shader str) surfaces in
+        let str = glsl s.name (Surface s.curves) ?bound:s.bound s.expr in
+        of_string gl_fragment_shader str) surfaces
+    in
     (* TO DO: share code for identical polynomial on difference surface:
        use expr hash has name. *)
     let curves =
@@ -214,8 +215,9 @@ let remove name name2 =
 
 let add env ?bound name expr =
   let open Formal.Gen in
+  let degree = degree expr ["x"; "y"; "z"] in
   let surface =
-    { name; expr; env; bound
+    { name; expr; env; bound; degree
     ; transparent = env.color.(3) < 1.0; curves = [] }
   in
   surfaces := surface ::
@@ -425,10 +427,16 @@ let commands =
   ; set_time_factor = (fun x -> time_factor := x)
   }
 
-let _d = Domain.spawn (fun () -> run commands input_files; Egl.exit_loop ctxt)
-
-let _ = draw () (** draw once outside the loop, because all exceptions are caught
-                   inside the main loop *)
+let run_cmds () =
+  run commands input_files;
+  Egl.exit_loop ctxt
 
 (** we now start the main loop ! *)
-let _ = main_loop ctxt
+let run_gl () =
+  draw (); (** draw once outside the loop, because all exceptions are caught
+               inside the main loop *)
+  main_loop ctxt
+
+let _ =
+  ignore (Domain.spawn run_cmds);
+  run_gl ()

@@ -36,6 +36,7 @@ type curve =
 type surface =
   { name : string
   ; expr : elem
+  ; degree : int option
   ; bound : elem option
   ; env : env
   ; transparent : bool
@@ -154,14 +155,15 @@ let dispatcher surfaces =
       | None -> env.color
       | Some c -> c
     in
+    let degree = Option.value ~default:0 s.degree in
     Format.fprintf fmt
       "  surfaces[LASTS] = surface(\n\
-           LASTS, %d, %.12f, %.12f,\n\
+           LASTS, %d, %d, %.12f, %.12f,\n\
            vec4(%.12f,%.12f,%.12f,%.12f),\n\
            vec4(%.12f,%.12f,%.12f,%.12f),\n\
            %.12f, %.12f); LASTS++;\n\
        "
-      env.mindivs env.precision env.precision_derive
+      env.mindivs degree env.precision env.precision_derive
       env.color.(0) env.color.(1) env.color.(2) env.color.(3)
       back_color.(0) back_color.(1) back_color.(2) back_color.(3)
       env.specular env.shininess
@@ -351,15 +353,19 @@ type cmds =
 
 let continue_pause = ref false
 
+let stop_pause () =
+  continue_pause := false
+
 let pause time =
   continue_pause := true;
   let t0 = Unix.gettimeofday () in
-  while !continue_pause && Unix.gettimeofday () -. t0 < time do
-    Unix.sleepf 0.1;
+  while !continue_pause do
+    Unix.sleepf 0.05;
+    Domain.cpu_relax ();
+    if Unix.gettimeofday () -. t0 >= time then stop_pause ()
   done
 
-let stop_pause () =
-  continue_pause := false
+let degree = degree
 
 let run (commands:cmds) input_files =
   let env = ref default_env in
