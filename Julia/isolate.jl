@@ -1,45 +1,102 @@
+Base.exit_on_sigint(false)
+
+using Printf
+include("./pari.jl")
+using .Pari
+using RS
+using MPFI
+
+#const Flt = BigFloat
+#setprecision(128)
+const Flt = Float64
+
+
 struct Hermite3
-    fa::Float64
-    A::Float64
-    B::Float64
-    C::Float64
+    fa::Flt
+    A::Flt
+    B::Flt
+    C::Flt
+    a::Flt
 end
 
 struct DFun{F,G}
     f::F
-    df::G
-    A::Float64
-    B::Float64
+    fdf::G
+    A::Flt
+    B::Flt
+    coefs::Union{Nothing,Vector{Rational{BigInt}}}
     nb_roots::Int
 end
 
-function hermite3_make(fn::DFun, a::Float64, fa, dfa,
-                                 b::Float64, fb, dfb)
+function norm_fun(F::DFun; coef=2)
+    function fdf(x::Flt)
+        fx, dfx = F.fdf(x)
+        fx = fx/coef
+        return (coef * asinh(fx), dfx/sqrt(fx*fx + 1))
+    end
+    return DFun(F.f,fdf,F.A,F.B,nothing,F.nb_roots)
+end
 
+function hermite3_make(a::Flt, fa, dfa,
+                       b::Flt, fb, dfb)
+
+    if (abs(fa) > abs(fb))
+        (a,fa,dfa,b,fb,dfb) = (b,fb,dfb,a,fa,dfa)
+    end
     c = b-a
-
     A = dfa
     B = (3*(fb-fa)-c*(2*dfa+dfb))/(c*c)
     C = (c*(dfa+dfb)-2*(fb-fa))/(c*c*c)
 
-    return Hermite3(fa, A, B, C)
+    return Hermite3(fa, A, B, C, a)
 end
 
-function WH(fn::DFun, f3::Hermite3, x::Float64, a::Float64, b::Float64)
-    fx = fn.f(x)
-    dfx = fn.df(x)
-    u = (x - a)
-    f3x = ((f3.C * u + f3.B) * u + f3.A) * u + f3.fa
-    df3x = (3*f3.C * u + 2*f3.B) * u + f3.A
-    D = abs(fx) + abs(f3x)
-    R1 = abs(f3x-fx)/D
-    R2 = abs(df3x-dfx)*(b-a)/D
-    #W = abs((df3x-dfx)/fx)
-    return R1, R2, fx, dfx
+function hermite3_critical(H::Hermite3)
+    D = H.B*H.B - 3*H.A*H.C
+    if (D >= 0)
+        if (H.B > 0)
+	    tmp = -H.B - sqrt(D)
+        else
+            tmp = -H.B + sqrt(D)
+        end
+	x1 = H.a + tmp/(3*H.C)
+        x2 = H.a + H.A/tmp;
+        if (x1 > x2)
+            (x1,x2) = (x2,x1)
+        end
+        return (x1,x2)
+    end
+    return nothing
 end
 
-function dicho(fn::DFun, a::Float64, fa::Float64, b::Float64, fb::Float64)
+function hermite3_fdf(H::Hermite3,x::Flt)
+    u = (x - H.a)
+    fx = ((H.C * u + H.B) * u + H.A) * u + H.fa
+    dfx = (3*H.C * u + 2*H.B) * u + H.A
+    (fx, dfx)
+end
+
+function WH(fn::DFun, H::Hermite3, x::Flt, root::Bool,  bound::Flt)
+    fx, dfx = fn.fdf(x)
+    hx, dhx = hermite3_fdf(H, x)
+    R1 = abs(hx-fx)/(abs(fx)+abs(hx))
+    R2 = root ? 1.0 : abs(dhx-dfx)/(abs(dfx)+abs(dhx))
+#    R1 = abs(hx-fx)/hypot(fx,hx)
+#    R2 = root ? 1.0 : abs(dhx-dfx)/hypot(dfx,dhx)
+#    R1 = abs((hx - fx)/(hx + fx))
+#    R2 = abs((dhx - dfx)/(dhx + dfx))
+    C = isnan(R2) ? R1 : isnan(R1) ? R2 : R1*R2
+    res = C < bound*bound
+    #println(res, " R1: ", R1, " R2: ", R2, " x: ", x,
+    #        " " , fx, " ", dfx, " ", hx, " ", dhx)
+
+    (res, C, fx, dfx)
+
+end
+
+function dicho(fn::DFun, a::Flt, fa::Flt, b::Flt, fb::Flt)
     c = a
+    @assert fa *fb < 0
     while true
         c = (a+b)/2
         if (a == c || b == c)
@@ -60,9 +117,10 @@ end
 
 default_refine = false
 
-function isolate(fn::DFun, A::Float64, B::Float64;
-                 bound1 = .33, bound2 = 2., alea=1e-2, refine=default_refine)
-    roots = Union{Float64,Tuple{Float64,Float64}}[]
+function isolate(fn::DFun, A::Flt, B::Flt;
+                 bound = .1, nb_samples = 3, alea=1e-2, refine=default_refine)
+    roots = Union{Flt,Tuple{Flt,Flt}}[]
+    bound = Flt(bound)
     count = 0
     function push_or_refine!(a,fa,b,fb)
         if (refine)
@@ -72,53 +130,54 @@ function isolate(fn::DFun, A::Float64, B::Float64;
         end
     end
 
-    function loop(a::Float64, fa::Float64, dfa,
-                  b::Float64, fb::Float64, dfb)
-        #println("loop:", a, " ", fa," ", b," ", fb)
-        H = hermite3_make(fn,a,fa,dfa,b,fb,dfb)
-        D = H.B*H.B - 3*H.A*H.C;
-        x1 = 0.0; x2 = 0.0
-	if (H.B > 0 && D >= 0)
-	    tmp = -H.B - sqrt(D);
-	    x1 = a + tmp/(3*H.C); x2 = a + H.A/tmp;
-        elseif (D >= 0)
-	    tmp = -H.B + sqrt(D);
-	    x1 = a + tmp/(3*H.C); x2 = a + H.A/tmp;
-	end
-        t = (rand()-0.5)*alea + 0.5
-        x3 = t*a + (1-t)*b
-        if (x1 > x2)
-            (x1,x2) = (x2,x1)
+    function loop(a::Flt, fa::Flt, dfa,
+                  b::Flt, fb::Flt, dfb)
+        #println("loop a:", a, " ", fa, " ", dfa, " b: ", b," ", fb, dfb)
+        @assert a < b "$a $b"
+        H = hermite3_make(a,fa,dfa,b,fb,dfb)
+        (x1, x2) = something(hermite3_critical(H), (Flt(NaN), Flt(NaN)))
+        C = -Inf
+        G = true
+        best = (a+b)/2
+        fbest = 0
+        dfbest = 0
+        nb = nb_samples
+        for j in 1:nb
+#	    t3 = j/(nb+1);
+	    t3 = (cos(pi*j/(nb+1)) + 1)/2.0;
+            xn = a + t3*(b - a)
+            @assert a <= xn && xn <= b "$a $xn $b"
+            G1, Cn, fxn, dfxn = WH(fn,H,xn,false,bound)
+            G = G && G1
+            if (!G1 && !(C > Cn))
+                C, best, fbest, dfbest = Cn, xn, fxn, dfxn
+            end
         end
-        test1 = !(a < x1 && x1 < b)
-        test2 = !(a < x2 && x2 < b)
-        if (test1 && test2)
-            t = (rand()-0.5)*alea + 0.75
-            x1 = t*a + (1-t)*b
-            t = (rand()-0.5)*alea + 0.25
-            x2 = t*a + (1-t)*b
-        elseif (test1)
-            t = (rand()-0.5)*alea + ((x2 < x3) ? 0.25 : 0.75)
-            x1 = t*a + (1-t)*b
-        elseif (test2)
-            t = (rand()-0.5)*alea + ((x1 < x3) ? 0.25 : 0.75)
-            x2 = t*a + (1-t)*b
+        if (a < x1 && x1 < b)
+            G, C2, fx1, dfx1 = WH(fn,H,x1,true,bound)
+            if (!G && !(C > C2))
+                C, best, fbest, dfbest = C2, x1, fx1, dfx1
+            end
         end
-        if (x1 > x2)
-            (x1,x2) = (x2,x1)
+        if (a < x2 && x2 < b)
+            G1, C2, fx2, dfx2 = WH(fn,H,x2,true,bound)
+            G = G && G1
+            if (!G1 && !(C > C2))
+                C, best, fbest, dfbest = C2, x2, fx2, dfx2
+            end
         end
-        R11, R12, fx1, dfx1 = WH(fn,H,x1,a,b)
-        R21, R22, fx2, dfx2 = WH(fn,H,x2,a,b)
-        R31, R32, fx3, dfx3 = WH(fn,H,x3,a,b)
+        # if (a < x1 && x1 < b)
+        #     nb -= 1
+        # end
+        # if (a < x2 && x2 < b)
+        #     nb -= 1
+        # end
         #println("xs:",x1," ", fx1, " ", R1, "\n",
         #          x2," ", fx2, " ", R2, "\n",
         #          x3," ", fx3, " ", R3)
-        bad = !(R11 < bound1) || !(R12 < bound2) ||
-              !(R21 < bound1) || !(R22 < bound2) ||
-              !(R31 < bound1) || !(R32 < bound2)
-        if (bad && (x3 != a && x3 != b))
-             loop(a,fa,dfa,x3,fx3,dfx3)
-             loop(x3,fx3,dfx3,b,fb,dfb)
+        if (!G && (a < best < b))
+             loop(a,fa,dfa,best,fbest,dfbest)
+             loop(best,fbest,dfbest,b,fb,dfb)
         else
             count += 1
             if (a < x1 && x1 < b)
@@ -156,9 +215,9 @@ function isolate(fn::DFun, A::Float64, B::Float64;
             end
         end
     end
-
-    loop(A,fn.f(A),fn.df(A),
-         B,fn.f(B),fn.df(B))
+    fa,dfa = fn.fdf(A)
+    fb,dfb = fn.fdf(B)
+    loop(A,fa,dfa,B,fb,dfb)
     return roots,  length(roots), count
 end
 
@@ -168,155 +227,245 @@ using Statistics
 total_tests = 0
 total_errors = 0
 
-function benchmark_isolate(msg, make_poly, ns; bound1=.33, bound2=2.)
+function benchmark_isolate(msg, make_poly, ns; bound=.1, nb_samples = 3)
+    F = make_poly(ns[1])
+    isolate(F,F.A,F.B;refine=true)
+    isolate(F,F.A,F.B;refine=false)
+    if (F.coefs != nothing) RS.rs_isolate(F.coefs) end
     println(msg)
     global total_tests
     global total_errors
     leaves = Float64[]
     times = Float64[]
     times_refine = Float64[]
+    times_pari = Float64[]
+    times_rs = Float64[]
     nbroots = Int[]
-
-    f = make_poly(ns[1])
-    a = f.A
-    b = f.B
-    isolate(f, a, b)
 
     nb_tests = 0
     nb_errors = 0
 
     for n in ns
-        f = make_poly(n)
-        a = f.A
-        b = f.B
-        e = f.nb_roots
-
         counts = Int[]
         ts = Float64[]
         tsr = Float64[]
+        tsp = Float64[]
+        tsrs = Float64[]
+        local_errors = 0
         r = 0
-        for i in 1:10
+        for i in 1:5
+            f = make_poly(n)
+            a = f.A
+            b = f.B
+            e = f.nb_roots
             t = @elapsed begin
-                r, nr, count = isolate(f, a, b; bound1, bound2)
+                r, nr, count = isolate(f, a, b; bound, nb_samples)
             end
             nb_tests += 1
             if length(r) != e
                 nb_errors += 1
+                local_errors += 1
             end
             tr = @elapsed begin
-                r, nr, count = isolate(f, a, b; refine=true, bound1, bound2)
+                r, nr, count = isolate(f, a, b; refine=true, bound, nb_samples)
+            end
+
+            if (f.coefs != nothing)
+                nr, tp = Pari.pari_real_roots(f.coefs)
+                @assert e == nr
+                push!(tsp,tp)
+                trs = @elapsed begin
+                    RS.rs_isolate(f.coefs)
+                end
+                push!(tsrs,trs)
             end
             nb_tests += 1
             if length(r) != e
                 nb_errors += 1
+                local_errors += 1
             end
             push!(ts,t)
             push!(tsr,tr)
             push!(counts,count)
         end
-        t = median(ts)
-        tr = median(tsr)
-        count = median(counts)
+        t = mean(ts)
+        tr = mean(tsr)
+        count = mean(counts)
         push!(leaves, count)
         push!(times, t*1000.0)
         push!(times_refine, tr*1000.0)
+        tp = 0.0; trs = 0.0;
+        if (length(tsp) > 0)
+            tp = mean(tsp)
+            push!(times_pari, tp*1000.0)
+        end
+        if (length(tsrs) > 0)
+            trs = mean(tsrs)
+            push!(times_rs, trs*1000.0)
+        end
         rs = length(r)
-        println("n=$n  roots=$rs leaves=$count  time=$t, time_refine=$tr")
+        @printf("n=%d  roots=%d leaves=%.1f  isol=%.3fms, refine=%.3fms, pari=%.3fms, rs=%.3fms, #errors=%d\n",
+                n, rs, count, t*1000.0 ,tr*1000.0, tp*1000.0, trs*1000.0, local_errors)
     end
 
     p = plot(ns, leaves,
              xlabel="degree n",
              ylabel="subdivisions",
              marker=:circle,
+             markersize=3,
              label="subdivisions",
              legend=:topleft)
 
-    plot!(twinx(),
-          ns, [times, times_refine],
-          ylabel="time (ms)",
-          marker=:square,
-          color=[:blue :red],
-          label=["time" "time refine"],
-          legend=:bottomright)
+    plots = [times, times_refine]
+    labels = ["ours" "ours+dicho" "pari" "rs"]
+    colors = [:blue :red :green :yellow]
 
+    if (length(times_pari) > 0)
+        push!(plots, times_pari)
+    end
+    if (length(times_rs) > 0)
+        push!(plots, times_rs)
+    end
+    lo, hi = extrema(Iterators.flatten(plots))
+    ticks = [i * 10.0^j for i in [1,2,5] for j in -4:4]
+    ticks = sort(filter(x -> lo < x < hi, ticks))
+    plot!(twinx(),
+          ns, plots,
+          ylabel="time (ms)",
+          yscale=:log10,
+          yticks=ticks,
+          yformatter = x -> string(round(x, sigdigits=2)),
+          marker=:square,
+          markersize=2,
+          color=colors,
+          label=labels,
+          legend=:bottomright)
 
     savefig(p, "../article/images/$(msg).png")
     total_tests += nb_tests
     total_errors += nb_errors
-    println("errors: ", nb_errors, "/", nb_tests)
+    println(msg, " errors: ", nb_errors, "/", nb_tests)
     return p
 end
 
+function coef_chebyshev(n)
+    T0 = [BigInt(1)]
+    if (n == 0) return T0 end
+    T1 = [BigInt(0), BigInt(1)]
+
+    for _ in 2:n
+        T0, T1 = T1, vcat([0], 2 .* T1) .- vcat(T0, [0, 0])
+    end
+    return Vector{Rational{BigInt}}(T1)
+end
+
 function chebyshev(n)
-    function f(x::Float64)::Float64
+    function f(x::Flt)::Flt
         if abs(x) <= 1
             return cos(n * acos(x))
         elseif x > 1
             return cosh(n * acosh(x))
-        else
+        elseif x < -1
             return (-1)^n * cosh(n * acosh(-x))
         end
     end
-
-    function df(x::Float64)::Float64
-        if abs(x) < 1
-            return n * sin(n * acos(x)) / sqrt(1 - x*x)
+    function fdf(x::Flt)::Tuple{Flt,Flt}
+        if abs(x) <= 1
+            ac = acos(x)
+            return cos(n * ac), n * sin(n * ac) / sqrt(1 - x*x)
         elseif x > 1
-            return n * sinh(n * acosh(x)) / sqrt(x*x - 1)
+            ac = acosh(x)
+            return cosh(n * ac), n * sinh(n * ac) / sqrt(x*x - 1)
         elseif x < -1
-            return (-1)^(n-1) * n * sinh(n * acosh(-x)) / sqrt(x*x - 1)
-        elseif x == 1
-            return n*n
-        else # x == -1
-            return (-1)^(n-1) * n*n
+            ac = acosh(-x)
+            return (-1)^n * cosh(n * ac), (-1)^(n-1) * n * sinh(n * ac) / sqrt(x*x - 1)
         end
     end
-    return DFun(f,df,-30.0,30.0,n)
+    return DFun(f,fdf,Flt(-10.0),Flt(10.0),coef_chebyshev(n),n)
 end
 
 function mignotte_bound(n,p)
-    return max(2,2^((2*p+3)/(n-2)))
+    return max(Flt(2),2^((2*p+3)/Flt(n-2)))
 end
 
 
 function mignotte(n,p)
-    function f(x::Float64)::Float64
+    function f(x::Flt)::Flt
         return x^n - 2*(2^p*x - 1)^2
     end
-
-    function df(x::Float64)::Float64
-        return n*x^(n-1) - 4*2^p*(2^p*x - 1)
+    function fdf(x::Flt)::Tuple{Flt,Flt}
+        return (x^n - 2*(2^p*x - 1)^2, n*x^(n-1) - 4*2^p*(2^p*x - 1))
     end
-    return DFun(f,df,
-                -mignotte_bound(n,p),
-                mignotte_bound(n,p),
-                (n % 2 == 0) ? 4 : 3)
+    c = zeros(BigInt, n + 1)
+    c[1] = -2
+    c[2] = BigInt(2)^(p + 2)
+    c[3] = -BigInt(2)^(2p + 1)
+    c[n + 1] += 1
+    DFun(f,fdf,
+         -mignotte_bound(n,p),
+         mignotte_bound(n,p),
+         Vector{Rational{BigInt}}(c),
+         (n % 2 == 0) ? 4 : 3)
+end
+
+function coef_wilkinson(n)
+    p = BigInt[1]
+
+    for k in 1:n
+        q = zeros(BigInt, length(p) + 1)
+
+        for i in eachindex(p)
+            q[i]   -= p[i]
+            q[i+1] += BigInt(k) * p[i]
+        end
+
+        p = q
+    end
+
+    Vector{Rational{BigInt}}(p)
 end
 
 function wilkinson(n)
-    function f(x::Float64)::Float64
-        s = 1.0
+    function f(x::Flt)::Flt
+        p = 1.0
         for k in 1:n
-            s *= x-k
+            p *= x - k
         end
-        return s
+        return p
     end
-
-    function df(x::Float64)::Float64
+    function fdf(x::Flt)::Tuple{Flt,Flt}
         p = 1.0
         dp = 0.0
         for k in 1:n
-            dp += p + dp*(x-k)
+            dp = p + dp*(x-k)
             p *= x - k
         end
-        return dp
+        return p,dp
     end
 
-    return DFun(f,df,Float64(-n),Float64(n),n)
+    return DFun(f,fdf,Flt(-n),Flt(n),coef_wilkinson(n),n)
+end
+
+function coef_geometric(n)
+    p = BigInt[1]
+
+    for k in 0:n-1
+        d = BigInt(1) << k
+        q = zeros(BigInt, length(p) + 1)
+
+        for i in eachindex(p)
+            q[i]   -= p[i]
+            q[i+1] += d * p[i]
+        end
+
+        p = q
+    end
+
+    Vector{Rational{BigInt}}(p)
 end
 
 function geometric(n)
-    function f(x::Float64)::Float64
+    function f(x::Flt)::Flt
         p = 1.0
         r = 1.0
         for k in 1:n
@@ -325,8 +474,7 @@ function geometric(n)
         end
         p
     end
-
-    function df(x::Float64)::Float64
+    function fdf(x::Flt)::Tuple{Flt,Flt}
         p = 1.0
         dp = 0.0
         r = 1.0
@@ -335,53 +483,131 @@ function geometric(n)
             p *= x-r
             r *= 0.5
         end
-        dp
+        p,dp
     end
 
-    DFun(f,df,-30.0,30.0,n)
+    DFun(f,fdf,-30.0,30.0,coef_geometric(n),n)
 end
 
-function random_poly(n; maxlog=2.0)
-    # roots distributed on R\{0}: sign * exp(random log)
-    roots = sign.(rand([-1.0, 1.0], n)) .* exp.(rand(n) .* maxlog)
+using Distributions
 
-    # count roots in ]-1,1[
-    inside = count(r -> abs(r) < 1, roots)
+function coef_random_r(roots)
+    p = [Rational{BigInt}(1)]
+    roots = [ rationalize(r; tol = 0) for r in roots]
+    for r in roots
+        q = zeros(Rational{BigInt}, length(p) + 1)
+        for i in eachindex(p)
+            q[i]   -= r * p[i]
+            q[i+1] += p[i]
+        end
+        p = q
+    end
 
-    # build polynomial
-    function f(x::Float64)::Float64
+    p
+end
+
+function random_roots(n; σ=2.0)
+    roots = rand(Normal(0, σ), n)
+    lo, hi = extrema(roots)
+    lo = min(-1.0,lo)
+    hi = max(hi, 1.0)
+    function f(x::Flt)::Flt
         p = 1.0
-        r = 1.0
         for k in 1:n
             p *= x-roots[k]
-            r *= 0.5
         end
         p
     end
-
-    function df(x::Float64)::Float64
+    function fdf(x::Flt)::Tuple{Flt,Flt}
         p = 1.0
         dp = 0.0
-        r = 1.0
         for k in 1:n
             dp = dp*(x-roots[k]) + p
-            p *= x-r
-            r *= 0.5
+            p *= x-roots[k]
         end
-        dp
+        p,dp
     end
 
-    return DFun(f, df, -1.0, 1.0, inside)
+    return DFun(f,fdf, 3*lo, 3*hi, coef_random_r(roots), n)
+end
+
+function coef_random(n; scale=1.0)
+    r = [ 0.0 for i in 0:n+1]
+    c = 2.0^(-n/2)
+    for i in 1:n+1
+        r[i] = (2*rand()-1) * scale * c
+        c *= sqrt((n-i+1) / i)
+    end
+    r
+end
+
+function random(n; scale=1.0)
+    coef = coef_random(n; scale)
+    coef_rat = Vector{Rational{BigInt}}([ rationalize(r; tol = 0) for r in coef])
+    function f(x::Flt)::Flt
+        r = 0.0
+        for i in n+1:-1:1
+            r = r * x + coef[i]
+        end
+        @assert isfinite(r)
+        r
+    end
+    function fdf(x::Flt)::Tuple{Flt,Flt}
+        r = 0.0
+        dr = 0.0
+        for i in n+1:-1:2
+            r = r * x + coef[i]
+            dr = dr * x + coef[i] * (i-1)
+        end
+        r = r * x + coef[1]
+        @assert isfinite(r)
+        @assert isfinite(dr)
+        r,dr
+    end
+    A = scale
+    B = -scale
+    roots=  RS.rs_isolate(coef_rat)
+    nr = length(roots)
+    A = min(-1,nr == 0 ? -10.0 : left(roots[1][1]) * 3.0)
+    B = max(1,nr == 0 ? 10.0 : right(roots[nr][1]) * 3.0)
+    DFun(f,fdf, Flt(A), Flt(B), coef_rat, nr)
+end
+
+function coef_legendre(n)
+    p0 = BigInt[1]       # 0! P_0
+    n == 0 && return p0
+
+    p1 = BigInt[0, 1]    # 1! P_1
+    n == 1 && return p1
+
+    for k in 2:n
+        p2 = zeros(BigInt, k + 1)
+
+        # (2k-1) x p1
+        for i in eachindex(p1)
+            p2[i + 1] += (2k - 1) * p1[i]
+        end
+
+        # -(k-1)^2 p0
+        for i in eachindex(p0)
+            p2[i] -= (k - 1)^2 * p0[i]
+        end
+
+        p0, p1 = p1, p2
+    end
+
+    Vector{Rational{BigInt}}(p1)
 end
 
 function legendre(n)
-    function f(x::Float64)::Float64
+    function f(x::Flt)::Flt
         if n == 0
             return 1.0
         elseif n == 1
             return x
         end
 
+        # calcul de P_(n-1)
         p0 = 1.0
         p1 = x
 
@@ -390,76 +616,71 @@ function legendre(n)
             p0 = p1
             p1 = p2
         end
+
         return p1
     end
-
-    function df(x::Float64)::Float64
+    function fdf(x::Flt)::Tuple{Flt,Flt}
         if n == 0
-            return 0.0
+            return 1.0, 0.0
         elseif n == 1
-            return 1.0
+            return x, 1.0
         end
-
-        pn = f(x)
 
         # calcul de P_(n-1)
         p0 = 1.0
         p1 = x
 
-        for k in 2:n-1
+        for k in 2:n
             p2 = ((2k-1)*x*p1 - (k-1)*p0)/k
             p0 = p1
             p1 = p2
         end
 
-        pm1 = p1
-
         if abs(x) == 1.0
-            return n*(n+1)/2 * (x > 0 ? 1 : (-1)^(n+1))
+            return p1, n*(n+1)/2 * (x > 0 ? 1 : (-1)^(n+1))
         end
 
-        return n*(x*pn - pm1)/(x*x-1)
+        return p1, n*(x*p1 - p0)/(x*x-1)
     end
-
-    DFun(f,df,-30.0,30.0,n)
+    DFun(f,fdf,Flt(-30.0),Flt(30.0),coef_legendre(n),n)
 end
 
+#F = norm_fun(wilkinson(10); coef=10000)
+#F = wilkinson(10)
+#F = norm_fun(chebyshev(100); coef=1000)
+#F = chebyshev(100)
+#F = random(3)
+#F = mignotte(20,16)
+#r, nr, cc = isolate(F, F.A, F.B; refine=true, bound = 0.2, nb_samples = 3)
+#println(F)
+#println(nr, " ", cc, " ", r)
+#STOP
+
+# count_try = 0
+# while(true)
+#     B = mignotte_bound(9,16)
+#     r, nr, count = isolate(mignotte(9,16), -B, B; refine=false, bound = 0.1, nb_samples = 3)
+#     println("RESULT: ", nr, " ", count, " ", r)
+#     global count_try += 1
+#     if (nr < 3) break end
+# end
+# println(count_try)
+# exit(1)
+
 p = benchmark_isolate(
-    "chebyshev",
-    chebyshev,
-    collect(2:1:100)
+    "random",
+    random,
+    collect(3:1:85);
+    bound=0.2
 )
 
 readline()
-
-p = benchmark_isolate(
-    "legendre",
-    legendre,
-    collect(2:1:100)
-)
-
-readline()
-
-p = benchmark_isolate(
-    "geometric",
-    geometric,
-    collect(2:1:33))
-
-readline()
-
-p = benchmark_isolate(
-    "geometric",
-    geometric,
-    collect(2:1:33)
-)
-
-readline()
-
 
 p = benchmark_isolate(
     "mignote_16",
     n->mignotte(n,16),
-    collect(5:1:60)
+    collect(3:1:60);
+    bound=0.2
 )
 
 readline()
@@ -467,7 +688,62 @@ readline()
 p = benchmark_isolate(
     "mignote_32",
     n->mignotte(n,32),
-    collect(5:1:29)
+    collect(3:1:30);
+    bound=0.2, nb_samples = 4
+)
+
+readline()
+
+p = benchmark_isolate(
+    "chebyshev",
+    chebyshev,
+    collect(2:1:100);
+    bound=0.2
+)
+
+readline()
+
+p = benchmark_isolate(
+    "asinh_chebyshev",
+    n->norm_fun(chebyshev(n); coef=10),
+    collect(2:1:100);
+    bound=0.1, nb_samples = 6
+)
+
+readline()
+
+p = benchmark_isolate(
+    "legendre",
+    legendre,
+    collect(2:1:100);
+    bound=0.2
+)
+
+readline()
+
+p = benchmark_isolate(
+    "asinh_legendre",
+    n->norm_fun(legendre(n); coef=10),
+    collect(2:1:100);
+    bound=0.1, nb_samples = 6
+)
+
+readline()
+
+p = benchmark_isolate(
+    "geometric",
+    geometric,
+    collect(2:1:33);
+    bound=0.2
+)
+
+readline()
+
+p = benchmark_isolate(
+    "asinh_geometric",
+    n->norm_fun(geometric(n); coef=10),
+    collect(2:1:33);
+    bound=0.2, nb_samples = 3
 )
 
 readline()
@@ -475,17 +751,28 @@ readline()
 p = benchmark_isolate(
     "wilkinson",
     wilkinson,
-    collect(5:1:100); bound1=0.33, bound2=2.
+    collect(3:1:100);
+    bound=0.2
 )
 
 readline()
 
 p = benchmark_isolate(
-    "random",
-    random_poly,
-    collect(3:1:100),
+    "asinh_wilkinson",
+    n->norm_fun(wilkinson(n); coef=1e20),
+    collect(2:1:100);
+    bound=0.015, nb_samples = 3
 )
 
+readline()
 
+p = benchmark_isolate(
+    "random_roots",
+    random_roots,
+    collect(3:1:100);
+    bound=0.1
+)
+
+readline()
 
 println("errors: ", total_errors, "/", total_tests)
