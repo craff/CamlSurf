@@ -141,18 +141,6 @@ function isolate(fn::DFun, A::Flt, B::Flt;
         best = (a+b)/2
         fbest = 0
         dfbest = 0
-        nb = nb_samples
-        for j in 1:nb
-#	    t3 = j/(nb+1);
-	    t3 = (cos(pi*j/(nb+1)) + 1)/2.0;
-            xn = a + t3*(b - a)
-            @assert a <= xn && xn <= b "$a $xn $b"
-            G1, Cn, fxn, dfxn = WH(fn,H,xn,false,bound)
-            G = G && G1
-            if (!G1 && !(C > Cn))
-                C, best, fbest, dfbest = Cn, xn, fxn, dfxn
-            end
-        end
         if (a < x1 && x1 < b)
             G, C2, fx1, dfx1 = WH(fn,H,x1,true,bound)
             if (!G && !(C > C2))
@@ -164,6 +152,17 @@ function isolate(fn::DFun, A::Flt, B::Flt;
             G = G && G1
             if (!G1 && !(C > C2))
                 C, best, fbest, dfbest = C2, x2, fx2, dfx2
+            end
+        end
+        for j in 1:nb_samples
+#	    t3 = j/(nb_samples+1);
+	    t3 = (cos(pi*j/(nb_samples+1)) + 1)/2.0;
+            xn = a + t3*(b - a)
+            @assert a <= xn && xn <= b "$a $xn $b"
+            G1, Cn, fxn, dfxn = WH(fn,H,xn,false,bound)
+            G = G && G1
+            if (!G1 && !(C > Cn))
+                C, best, fbest, dfbest = Cn, xn, fxn, dfxn
             end
         end
         # if (a < x1 && x1 < b)
@@ -227,7 +226,7 @@ using Statistics
 total_tests = 0
 total_errors = 0
 
-function benchmark_isolate(msg, make_poly, ns; bound=.1, nb_samples = 3)
+function benchmark_isolate(msg, make_poly, ns; bound=.1, nb_samples = 3, pert=0.02)
     F = make_poly(ns[1])
     isolate(F,F.A,F.B;refine=true)
     isolate(F,F.A,F.B;refine=false)
@@ -253,10 +252,10 @@ function benchmark_isolate(msg, make_poly, ns; bound=.1, nb_samples = 3)
         tsrs = Float64[]
         local_errors = 0
         r = 0
-        for i in 1:5
+        for i in 1:10
             f = make_poly(n)
-            a = f.A
-            b = f.B
+            a = f.A * (1 + pert*(rand() - 0.5))
+            b = f.B * (1 + pert*(rand() - 0.5))
             e = f.nb_roots
             t = @elapsed begin
                 r, nr, count = isolate(f, a, b; bound, nb_samples)
@@ -443,7 +442,7 @@ function wilkinson(n)
         return p,dp
     end
 
-    return DFun(f,fdf,Flt(-n),Flt(n),coef_wilkinson(n),n)
+    return DFun(f,fdf,Flt(-n),Flt(2*n),coef_wilkinson(n),n)
 end
 
 function coef_geometric(n)
@@ -670,8 +669,8 @@ end
 p = benchmark_isolate(
     "random",
     random,
-    collect(3:1:85);
-    bound=0.2
+    collect(3:1:80);
+    bound=0.15
 )
 
 readline()
@@ -680,7 +679,7 @@ p = benchmark_isolate(
     "mignote_16",
     n->mignotte(n,16),
     collect(3:1:60);
-    bound=0.2
+    bound=0.15
 )
 
 readline()
@@ -689,7 +688,7 @@ p = benchmark_isolate(
     "mignote_32",
     n->mignotte(n,32),
     collect(3:1:30);
-    bound=0.2, nb_samples = 4
+    bound=0.15
 )
 
 readline()
@@ -743,7 +742,7 @@ p = benchmark_isolate(
     "asinh_geometric",
     n->norm_fun(geometric(n); coef=10),
     collect(2:1:33);
-    bound=0.2, nb_samples = 3
+    bound=0.15
 )
 
 readline()
