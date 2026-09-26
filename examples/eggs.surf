@@ -1,7 +1,5 @@
 translateZ 15;
 translateY -6;
-precision = 0.99;
-precision_derive = 0.1;
 rotateX -0.3;
 far = 100;
 near= 10;

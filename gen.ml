@@ -11,7 +11,7 @@ type env = {
     specular : float;
     shininess : float;
     precision : float;
-    precision_derive : float;
+    nb_samples : int;
     mindivs : int;
   }
 
@@ -22,8 +22,8 @@ let default_env =
     line_width = 1.5;
     specular = 0.25;
     shininess = 50.;
-    precision = 0.2;
-    precision_derive = 0.5;
+    precision = 0.15;
+    nb_samples = 3;
     mindivs = 0;
   }
 
@@ -158,12 +158,12 @@ let dispatcher surfaces =
     let degree = Option.value ~default:0 s.degree in
     Format.fprintf fmt
       "  surfaces[LASTS] = surface(\n\
-           LASTS, %d, %d, %.12f, %.12f,\n\
+           LASTS, %d, %d, %.12f, %d,\n\
            vec4(%.12f,%.12f,%.12f,%.12f),\n\
            vec4(%.12f,%.12f,%.12f,%.12f),\n\
            %.12f, %.12f); LASTS++;\n\
        "
-      env.mindivs degree env.precision env.precision_derive
+      env.mindivs degree env.precision env.nb_samples
       env.color.(0) env.color.(1) env.color.(2) env.color.(3)
       back_color.(0) back_color.(1) back_color.(2) back_color.(3)
       env.specular env.shininess
@@ -411,8 +411,8 @@ let run (commands:cmds) input_files =
         (fun () -> env := { !env with mindivs })
     ; "precision" "=" (precision::FLOAT) =>
         (fun () -> env := { !env with precision })
-    ; "precision_derive" "=" (precision_derive::FLOAT) =>
-        (fun () -> env := { !env with precision_derive })
+    ; "nb_samples" "=" (nb_samples::INT) =>
+        (fun () -> env := { !env with nb_samples })
     ; "near" "=" (x::FLOAT) =>
         (fun () -> commands.set_near x)
     ; "far" "=" (x::FLOAT) =>

@@ -34,7 +34,6 @@ let s1(x,y,z) = x^2 + y^2 + z^2 - r1^2;
   specular = .7;
   color = (0.5, 0.5, 0.9, 0.33);
   back_color = none;
-  precision = 1e-1;
   mindivs = 0;
   surface s1 : s1(x,y,z);
 }
@@ -64,6 +63,5 @@ let q1(x,y,z) = q0(x,y,z) + a*s1(x,y,z)^2 + ra;
 {
   color = (0.6, 0.6, 0.2);
   mindivs = 0;
-  precision = 1e-2;
   surface q1 : q1(x,y,z);
 }

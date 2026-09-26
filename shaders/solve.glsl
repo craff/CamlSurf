@@ -42,7 +42,6 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
     for (int i = 0; i < MAXLAYERS; i++) {
        ures[i] = 1e32;
     }
-    int sp = 0;
     int sr = 0;
     float ubest = far;
     // échantillonnage du rayon
@@ -170,86 +169,57 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	  dfb = dot(dtmp,dir);
         }
 
-	float c = ub - ua;
-	float A = dfa;
-	float B = (3.0*(fb-fa)-c*(2.0*dfa + dfb))/(c*c);
-	float C = (c*(dfa + dfb) - 2.0*(fb - fa))/(c*c*c);
-	float D = B*B - 3.0*A*C;
-	float t = (rand() - 0.5) * 1e-1 + 0.5;
-	float u1 = ua, u2 = ua, u3 = t*ua + (1.0-t)*ub;
-	if (B > 0.0 && D >= 0.0) {
-	  float tmp = -B - sqrt(D);
-	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
-        } else if (D >= 0.0) {
-	  float tmp = -B + sqrt(D);
-	  u1 = ua + tmp/(3.0*C); u2 = ua + A/tmp;
-	}
-	bool test1 = ua >= u1 || u1 >= ub, test2 = ua >= u2 || u2 >= ub;
-	if (test1 && test2) {
-	  float t = (rand() - 0.5) * 1e-1 + 0.75;
-	  u1 = t*ua + (1.0-t)*ub;
-	  t = (rand() - 0.5) * 1e-1 + 0.25;
-	  u2 = t*ua + (1.0-t)*ub;
-	}
-	else if (test2) {
-	  float t = (rand() - 0.5) * 1e-1 + u1<u3 ? 0.25 : 0.75;
-	  u2 = t*ua + (1.0-t)*ub;
-	}
-	else if (test1) {
-	  float t = (rand() - 0.5) * 1e-1 + u2<u3 ? 0.25 : 0.75;
-	  u1 = t*ua + (1.0-t)*ub;
-	}
-	if (u2 < u1) {
-	  float tmp = u1; u1 = u2; u2 = tmp;
-	}
+	hermite H = hermite3_make(ua,fa,dfa,ub,fb,dfb);
+	float du = ub - ua;
+	float u1 = ua, u2 = ua;
+	hermite3_critical(H, u1, u2);
 	float us[4];
 	float fs[4];
-	float fc; float dfc;
+	float uc = ua; float fc; float dfc; float C = 0.0; float D;
 	bool bad=false;
+	us[0] = ua; fs[0] = fa;
+	int usn = 1;
+	if (ua < u1 && u1 < ub)
 	{
-	   x = e + u3 * dir;
-	   float fx = f_df(si,x,dtmp);
-	   float dfx = dot(dtmp,dir);
-	   fc = fx; dfc = dfx;
-	   float X = u3 - ua;
-	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float df3x = A + (2.0*B + 3.0*C*X)*X;
-	   float R1 =  abs(fx - f3x);
-	   float R2 =  abs(dfx - df3x)*(ub - ua);
-	   float D = abs(fx) + abs(f3x);
-	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
-	}
-	if (!bad) {
 	   x = e + u1 * dir;
 	   float fx = f_df(si,x,dtmp);
 	   float dfx = dot(dtmp,dir);
-	   us[1] = u1; fs[1] = fx;
-	   float X = u1 - ua;
-	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float df3x = A + (2.0*B + 3.0*C*X)*X;
-	   float R1 =  abs(fx - f3x);
-	   float R2 =  abs(dfx - df3x)*(ub - ua);
-	   float D = abs(fx) + abs(f3x);
-	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
+	   us[usn] = u1; fs[usn] = fx; usn += 1;
+	   bad = !WH(H, du, u1, fx, dfx, surf, D) || bad;
+	   if (D > C) {
+	       uc = u1; fc = fx; dfc = dfx; C = D;
+	   }
 	}
-	if (!bad) {
+	if (ua < u2 && u2 < ub)
+	{
 	   x = e + u2 * dir;
 	   float fx = f_df(si,x,dtmp);
 	   float dfx = dot(dtmp,dir);
-	   us[2] = u2; fs[2] = fx;
-	   float X = u2 - ua;
-	   float f3x = fa + (A + (B + C*X)*X)*X;
-	   float df3x = A + (2.0*B + 3.0*C*X)*X;
-	   float R1 =  abs(fx - f3x);
-	   float R2 =  abs(dfx - df3x)*(ub - ua);
-	   float D = abs(fx) + abs(f3x);
-	   if (!(R1 <= surf.prec1 * D && R2 <= surf.prec2 * D)) bad = true;
+	   us[usn] = u2; fs[usn] = fx; usn += 1;
+	   bad = !WH(H, du, u2, fx, dfx, surf, D) || bad;
+	   if (D > C) {
+	       uc = u2; fc = fx; dfc = dfx; C = D;
+	   }
 	}
-	if (bad && sp <= SSIZE - 2 && u3 != ua && u3 != ub) {
+	us[usn] = ub; fs[usn] = fb; usn += 1;
+	float width = 1.0/float(surf.nb_samples+1);
+	for (int j = 1; j <= surf.nb_samples; j++) {
+	   float t = float(j)*width;
+	   float u3 = ua + du*t;
+	   /*if (abs(u1 - u3) < width/5.0 || abs(u2-u3) < width/5.0) continue;*/
+	   x = e + u3 * dir;
+	   float fx = f_df(si,x,dtmp);
+	   float dfx = dot(dtmp,dir);
+	   bad = !WH(H, du, u3, fx, dfx, surf, D) || bad;
+	   if (D > C && u3 != ua && u3 != ub) {
+	       uc = u3; fc = fx; dfc = dfx; C = D;
+	   }
+	}
+	if (bad && sp <= SSIZE - 2 && uc != ua && uc != ub) {
            ustack[sp] = ub;
 	   fstack[sp] = fb;
 	   dfstack[sp++] = dfb;
-	   ustack[sp] = u3;
+	   ustack[sp] = uc;
 	   fstack[sp] = fc;
 	   dfstack[sp++] = dfc;
 	   ub = ua;
@@ -257,10 +227,8 @@ int solve(vec3 e, vec3 pos, int nb, out vec3[MAXLAYERS] res, out int surfs[MAXLA
 	   dfb = dfa;
 	   continue;
 	}
-	us[0] = ua; fs[0] = fa;
-	us[3] = ub; fs[3] = fb;
 	bool brk = false;
-	for (int j = 0; j < 3; j++) {
+	for (int j = 0; j < usn-1; j++) {
 	   if (fs[j] * fs[j+1] <= 0.0) {
 	      float ur;
 	      x = dicho(si,e,dir,us[j],fs[j],us[j+1],fs[j+1],ur);
